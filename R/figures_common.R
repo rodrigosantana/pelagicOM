@@ -64,6 +64,13 @@ fmt_lat <- function(x) {
            ifelse(x < 0, sprintf("%g\u00b0S", -x), "0\u00b0"))
 }
 
+######@> "a", "a and b", "a, b and c"...
+collapse_and <- function(x) {
+    n <- length(x)
+    if (n <= 1) return(paste(x, collapse = ""))
+    paste(paste(x[-n], collapse = ", "), "and", x[n])
+}
+
 ######@> Colours, line types and legend labels of the regions. Labels
 ######@> are ordered from north to south; breaks ascending...
 region_style <- function(regions) {

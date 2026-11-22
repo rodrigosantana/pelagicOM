@@ -204,10 +204,12 @@ iccat_stocks <- function() iccat_grid_data()$stocks
 #' @examples
 #' dom <- om_domain_iccat("BET-A", geometry = FALSE)
 #' dom
-#' dom_alb <- om_domain_iccat("ALB-N", region_breaks = 30,
-#'                            region_labels = c("North", "South"),
-#'                            geometry = FALSE)
-#' table(dom_alb$cells$Region)
+#' ## BET-A split at the equator into four regions
+#' dom4 <- om_domain_iccat("BET-A", region_breaks = c(-20, 0, 20),
+#'                         region_labels = c("NORTH", "TROP_N", "TROP_S",
+#'                                           "SOUTH"),
+#'                         geometry = FALSE)
+#' table(dom4$cells$Region)
 #' @export
 om_domain_iccat <- function(stock_code = "BET-A", region_breaks = c(-20, 20),
                             region_labels = c("R01", "R02", "R03"),

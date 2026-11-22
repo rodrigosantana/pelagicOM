@@ -13,6 +13,13 @@
   been called yet.
 * `strategy_recovery_diagnostic()` silences the harmless "Quick-TRANSfer"
   warning of `kmeans()`; its results do not change.
+* All examples (README, vignette, articles, help pages) are based on BET. The
+  complete tuning example is an alternative BET operating model: four
+  regions, northward redistribution, fleet E removed and a new fleet F.
+* The map of ICCAT stock areas (article "Spatial domain") now draws one panel
+  per species, with each stock area labelled on the map. In the old
+  facetted layout the east and west areas of a species (e.g. SKJ-E / SKJ-W)
+  looked swapped.
 
 # pelagicOM 0.1.1 (2026-11-22)
 

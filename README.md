@@ -55,19 +55,14 @@ bcfg <- om_biomass_config("BET_ICCAT",
                           population = list(r = 0.45),
                           shift = list(center_drift = 3))
 
-# any ICCAT stock area (24 areas bundled), any latitudinal regions,
-# or read a GeoPackage directly (geodesic areas by lwgeom)
-iccat_stocks()
-dom <- om_domain_iccat("ALB-N", region_breaks = c(25, 40),
-                       region_labels = c("NORTH", "CENTRAL", "SOUTH"))
-dom2 <- om_domain_from_gpkg("Experimento_02/ICCAT/ICCAT_gis.gpkg",
-                            layer_stock = "albacore_tuna_stock_areas",
-                            stock_code = "ALB-N",
-                            selection = "point_on_surface")
+# any latitudinal regions (BET-A split at the equator into four regions),
+# or the domain read directly from the GeoPackage (geodesic areas by lwgeom)
+dom4 <- om_domain_iccat("BET-A", region_breaks = c(-20, 0, 20),
+                        region_labels = c("NORTH", "TROP_N", "TROP_S", "SOUTH"))
+dom_gpkg <- om_domain_from_gpkg("Experimento_02/ICCAT/ICCAT_gis.gpkg")
 
-# temperate species: envelope on |latitude|; user-defined habitat layers
-bcfg$habitat$envelope_type <- "abs_latitude"
-bcfg$habitat$custom_effect <- function(cells) 0.01 * cells$Longitude
+# user-defined habitat layers (log scale, one value per cell)
+bcfg$habitat$custom_effect <- function(cells) 1.5 * (cells$Area_frac < 1)
 
 # any fleets
 fcfg <- om_fishery_config("BET_ICCAT")
@@ -77,8 +72,8 @@ fcfg$fleets$F <- om_fleet(n_vessels = 20, year_start = 1990,
 
 The [articles](https://rodrigosantana.github.io/pelagicOM/articles/) cover
 every component of the model and the tuning options, including a complete
-example with a temperate tuna in the ALB-N area, the configuration reference
-and the data dictionary.
+alternative operating model for BET (four regions, northward redistribution,
+new fleet), the configuration reference and the data dictionary.
 
 ## Proof of reproduction
 
@@ -141,6 +136,7 @@ Todos os parâmetros podem ser ajustados com `om_config_update()`. A área pode
 ser qualquer estoque da ICCAT (`om_domain_iccat()`), as regiões podem ser
 faixas de latitude livres, o envelope pode ser tropical (`"latitude"`) ou
 temperado (`"abs_latitude"`), e frotas, espécies-alvo e acompanhantes também
-são configuráveis. A metodologia completa está em
+são configuráveis. Todos os exemplos da documentação usam a BET. A
+metodologia completa está em
 `Experimento_02/Simulacao_Biomassa/METODOLOGIA.md` e
 `Experimento_02/Simulacao_Pesca/RELATORIO_METODOLOGICO.md`.

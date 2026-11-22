@@ -148,8 +148,7 @@ fig_maps <- function(sim, years_sel = NULL) {
         ggplot2::labs(x = NULL, y = NULL,
                       title = "True biomass density in selected years",
                       subtitle = if (length(br))
-                          paste("Dashed lines:", paste(fmt_lat(br),
-                                                       collapse = " and "),
+                          paste("Dashed lines:", collapse_and(fmt_lat(br)),
                                 "region boundaries")) +
         theme_pub(base = 10) +
         ggplot2::theme(legend.position = "right",

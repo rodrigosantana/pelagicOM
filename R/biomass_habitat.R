@@ -44,9 +44,11 @@
 #' @param type `"latitude"` or `"abs_latitude"`.
 #' @return Log-scale envelope (0 at the centre).
 #' @examples
+#' ## BET envelope in 1950 (sd 11) and in 2025 (sd 11 x 1.7, poleward
+#' ## expansion of Experimento 02)
 #' lat <- seq(-60, 60, 10)
 #' round(exp(latitudinal_envelope(lat, 0, 11, 11)), 3)
-#' round(exp(latitudinal_envelope(lat, 30, 8, 10, "abs_latitude")), 3)
+#' round(exp(latitudinal_envelope(lat, 0, 18.7, 18.7)), 3)
 #' @export
 latitudinal_envelope <- function(lat, center, sd_north, sd_south,
                                  type = "latitude") {
