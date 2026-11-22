@@ -30,7 +30,7 @@
 
     <a class="navbar-brand me-2" href="index.html">pelagicOM</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,6 +56,9 @@
     <li><a class="dropdown-item" href="articles/outputs.html">Outputs, files and data dictionary</a></li>
     <li><a class="dropdown-item" href="articles/configuration-reference.html">Configuration reference: every parameter</a></li>
     <li><a class="dropdown-item" href="articles/reproduce-experimento02.html">Proof of reproduction of Experimento 02</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Case studies</h6></li>
+    <li><a class="dropdown-item" href="articles/mimic-bsh-south.html">A mimic of the South Atlantic blue shark</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
@@ -155,7 +158,7 @@
 <span></span>
 <span><span class="co"># user-defined habitat layers (log scale, one value per cell)</span></span>
 <span><span class="va">bcfg</span><span class="op">$</span><span class="va">habitat</span><span class="op">$</span><span class="va">custom_effect</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">cells</span><span class="op">)</span> <span class="fl">1.5</span> <span class="op">*</span> <span class="op">(</span><span class="va">cells</span><span class="op">$</span><span class="va">Area_frac</span> <span class="op">&lt;</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
-<p>The <a href="https://rodrigosantana.github.io/pelagicOM/articles/">articles</a> cover every component of the model and the tuning options, including a complete alternative operating model for BET (same three regions, fleets and scenarios as Experimento 02, with other productivity, a northward redistribution and a stronger creep), the configuration reference and the data dictionary.</p>
+<p>The <a href="https://rodrigosantana.github.io/pelagicOM/articles/">articles</a> cover every component of the model and the tuning options, including a complete alternative operating model for BET (same three regions, fleets and scenarios as Experimento 02, with other productivity, a northward redistribution and a stronger creep), the configuration reference and the data dictionary. A case-study article builds a mimic of the South Atlantic blue shark (BSH-S) with the same functions.</p>
 </div>
 <div class="section level2">
 <h2 id="proof-of-reproduction">Proof of reproduction<a class="anchor" aria-label="anchor" href="#proof-of-reproduction"></a>

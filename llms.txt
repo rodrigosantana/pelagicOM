@@ -77,7 +77,8 @@ cover every component of the model and the tuning options, including a
 complete alternative operating model for BET (same three regions, fleets
 and scenarios as Experimento 02, with other productivity, a northward
 redistribution and a stronger creep), the configuration reference and
-the data dictionary.
+the data dictionary. A case-study article builds a mimic of the South
+Atlantic blue shark (BSH-S) with the same functions.
 
 ## Proof of reproduction
 
@@ -327,3 +328,10 @@ Tuning, outputs, every parameter and the proof of reproduction.
   parameter](https://rodrigosantana.github.io/pelagicOM/articles/configuration-reference.md):
 - [Proof of reproduction of Experimento
   02](https://rodrigosantana.github.io/pelagicOM/articles/reproduce-experimento02.md):
+
+### Case studies
+
+Operating models shaped after real stocks.
+
+- [A mimic of the South Atlantic blue
+  shark](https://rodrigosantana.github.io/pelagicOM/articles/mimic-bsh-south.md):

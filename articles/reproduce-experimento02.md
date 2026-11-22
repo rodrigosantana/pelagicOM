@@ -55,7 +55,7 @@ The same comparison runs as a unit test when the environment variable
 PELAGICOM_EXP02=$PWD/Experimento_02 Rscript -e 'devtools::test("pelagicOM")'
 ```
 
-## Result (pelagicOM 0.1.2, 2026-11-22)
+## Result (pelagicOM 0.1.3, 2026-11-22)
 
 All comparisons use
 [`identical()`](https://rdrr.io/r/base/identical.html), i.e. bit-for-bit

@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">pelagicOM</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,6 +37,9 @@
     <li><a class="dropdown-item" href="../articles/outputs.html">Outputs, files and data dictionary</a></li>
     <li><a class="dropdown-item" href="../articles/configuration-reference.html">Configuration reference: every parameter</a></li>
     <li><a class="dropdown-item" href="../articles/reproduce-experimento02.html">Proof of reproduction of Experimento 02</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Case studies</h6></li>
+    <li><a class="dropdown-item" href="../articles/mimic-bsh-south.html">A mimic of the South Atlantic blue shark</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -60,6 +63,16 @@
       <small>Source: <a href="https://github.com/rodrigosantana/pelagicOM/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.1.3" id="pelagicom-013-2026-11-22">pelagicOM 0.1.3 (2026-11-22)<a class="anchor" aria-label="anchor" href="#pelagicom-013-2026-11-22"></a></h2>
+<ul><li>New article “A mimic of the South Atlantic blue shark” (case studies): an operating model shaped after BSH-S as assessed by ICCAT in 2023 (area south of 5°N, JABBA reference-case production parameters, removals following the ICCAT catches, nursery and adult areas, five longline fleet archetypes, index-like series), built with configuration only.</li>
+<li>
+<code><a href="../reference/simulate_fishery.html">simulate_fishery()</a></code> no longer asks for a <code>catchability$region_effect</code> of a region without cells (e.g. R01 in a southern stock area).</li>
+<li>
+<code><a href="../reference/om_fishery_config.html">om_fishery_config()</a></code> / <code><a href="../reference/om_fishery_config.html">validate_fishery_config()</a></code> stop when <code>output$map_years</code> lie outside the simulated period (the effort maps had empty panels).</li>
+<li>Map figures draw only the region boundaries that cross the domain.</li>
+<li>The reproduction of Experimento 02 is unchanged (19 of 19 identical).</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.2" id="pelagicom-012-2026-11-22">pelagicOM 0.1.2 (2026-11-22)<a class="anchor" aria-label="anchor" href="#pelagicom-012-2026-11-22"></a></h2>
 <ul><li>Package website (pkgdown) at <a href="https://rodrigosantana.github.io/pelagicOM/" class="uri">https://rodrigosantana.github.io/pelagicOM/</a>, built and deployed to GitHub Pages by a GitHub Actions workflow. Eight articles cover the spatial domain, Part I (biomass), Part II (fishery), the observation process and scenarios, tuning, outputs and data dictionary, every parameter (generated from the preset) and the proof of reproduction of Experimento 02.</li>
