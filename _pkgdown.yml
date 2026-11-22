@@ -1,0 +1,105 @@
+url: https://rodrigosantana.github.io/pelagicOM/
+
+template:
+  bootstrap: 5
+  light-switch: true
+  math-rendering: mathjax
+  bslib:
+    primary: "#1f4e79"
+    navbar-bg: "#1f4e79"
+    code-color: "#7a2e0e"
+
+home:
+  title: "pelagicOM: operating model for pelagic stocks and longline fisheries"
+  description: >
+    Simulates a completely known operating truth (spatio-temporal biomass and
+    set-by-set longline fishery data) to test CPUE standardisation methods.
+
+authors:
+  Rodrigo Sant'Ana:
+    href: https://github.com/rodrigosantana
+
+navbar:
+  structure:
+    left: [intro, reference, articles, news]
+    right: [search, github, lightswitch]
+
+articles:
+  - title: Getting started
+    navbar: ~
+    contents:
+      - pelagicOM
+  - title: The operating model
+    navbar: The operating model
+    desc: How each component of the simulation works.
+    contents:
+      - articles/spatial-domain
+      - articles/biomass
+      - articles/fishery
+      - articles/observation-scenarios
+  - title: Using the package
+    navbar: Using the package
+    desc: Tuning, outputs, every parameter and the proof of reproduction.
+    contents:
+      - articles/tuning
+      - articles/outputs
+      - articles/configuration-reference
+      - articles/reproduce-experimento02
+
+reference:
+  - title: Complete runs
+    desc: Run the whole operating model and write or check its outputs.
+    contents:
+      - om_run
+      - om_write_biomass
+      - om_write_fishery
+      - om_compare_reference
+  - title: Configuration
+    desc: Presets and tools to tune every parameter.
+    contents:
+      - om_presets
+      - om_biomass_config
+      - om_fishery_config
+      - om_config_update
+      - om_fleet
+  - title: Spatial domain
+    desc: ICCAT grid and stock areas, GeoPackages, synthetic grids, regions.
+    contents:
+      - om_domain
+      - om_domain_iccat
+      - om_domain_from_gpkg
+      - om_domain_grid
+      - iccat_stocks
+      - iccat_geometry
+      - inspect_geopackage
+      - classify_regions
+      - geodesic_area_km2
+  - title: Biomass operating truth (Part I)
+    contents:
+      - simulate_biomass
+      - build_long_table
+      - reference_points
+      - latitudinal_envelope
+      - gaussian_random_field
+      - check_simulation
+      - biomass_summaries
+  - title: Fishery (Part II)
+    contents:
+      - simulate_fishery
+      - fishery_truth
+      - hbf_effect_fun
+      - rtweedie_cpg
+      - active_vessels_by_year
+      - check_fishery_truth
+  - title: Observation and scenarios
+    contents:
+      - apply_observation_process
+      - generate_scenarios
+  - title: Diagnostics
+    contents:
+      - fishery_diagnostics
+  - title: Figures
+    contents:
+      - biomass_figures
+      - fishery_figures
+      - theme_pub

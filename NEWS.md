@@ -1,3 +1,19 @@
+# pelagicOM 0.1.2 (2026-11-22)
+
+* Package website (pkgdown) at <https://rodrigosantana.github.io/pelagicOM/>,
+  built and deployed to GitHub Pages by a GitHub Actions workflow. Eight
+  articles cover the spatial domain, Part I (biomass), Part II (fishery), the
+  observation process and scenarios, tuning for other species, outputs and
+  data dictionary, every parameter (generated from the preset) and the proof
+  of reproduction of Experimento 02.
+* `sf` is now imported in the NAMESPACE, so its methods are available as soon
+  as pelagicOM is loaded. Before this, the bundled cell polygons (read with
+  `readRDS()`) could be handled as plain data frames, and `fig_maps()` /
+  `fig_base_habitat()` failed in a fresh session where no `sf` function had
+  been called yet.
+* `strategy_recovery_diagnostic()` silences the harmless "Quick-TRANSfer"
+  warning of `kmeans()`; its results do not change.
+
 # pelagicOM 0.1.1 (2026-11-22)
 
 * `lwgeom` and `sf` are now required (Imports). Every cell area is geodesic

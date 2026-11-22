@@ -2,6 +2,8 @@
 
 **Spatio-temporal operating model for pelagic stocks and longline fisheries.**
 
+Documentation: <https://rodrigosantana.github.io/pelagicOM/>
+
 `pelagicOM` packages the simulation components of *Experimento 02* (workshop
 tRFMO CPUE, 2026) as an R package. You can rerun it, tune it for other
 species and distributions, and reuse it to test CPUE standardisation
@@ -73,8 +75,10 @@ fcfg$fleets$F <- om_fleet(n_vessels = 20, year_start = 1990,
                           regions = "R02", core_lon = -10, core_lat = 0)
 ```
 
-See `vignette("pelagicOM")` for a complete example with a temperate tuna in
-the ALB-N area.
+The [articles](https://rodrigosantana.github.io/pelagicOM/articles/) cover
+every component of the model and the tuning options, including a complete
+example with a temperate tuna in the ALB-N area, the configuration reference
+and the data dictionary.
 
 ## Proof of reproduction
 

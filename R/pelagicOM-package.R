@@ -39,4 +39,10 @@
 #' against the reference files of Experimento 02.
 #'
 #' @keywords internal
+#' @importFrom sf st_geometry
 "_PACKAGE"
+
+## sf is imported (not only used with sf::) so that its namespace, and the
+## S3 methods of sf objects ([, rbind, ...), are loaded with pelagicOM.
+## Otherwise the bundled cell polygons, read with readRDS(), would be
+## handled as plain data frames when no sf function had been called yet.

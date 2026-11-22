@@ -11,3 +11,6 @@
 inst/doc/
 doc/
 Meta/
+
+# pkgdown site (built by GitHub Actions)
+docs/

@@ -5,3 +5,8 @@
 ^LICENSE$
 ^\.git$
 ^\.gitignore$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^vignettes/articles$
+^\.github$

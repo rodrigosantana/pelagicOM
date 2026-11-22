@@ -1,0 +1,261 @@
+---
+title: "Part I: the biomass operating truth"
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 8,
+                      fig.height = 5, dev = "ragg_png", dpi = 110)
+```
+
+Part I generates a **completely known** biomass for every year and cell of
+the domain. No fishing process is simulated at this stage. The central
+identity is
+
+$$
+\begin{aligned}
+B(y, s) &= B_{total}(y)\; p(y, s) \\
+p(y, s) &= \frac{D(y, s)\, A_s}{\sum_{s'} D(y, s')\, A_{s'}} \\
+\log D(y, s) &= E(y, \text{lat}_s) + H(s) + G(s) + Z(s) + \varepsilon(y, s)
+\end{aligned}
+$$
+
+where $A_s$ is the geodesic area of the cell. The terms are:
+
+* $E$ is the latitudinal envelope, which may change in time
+  (redistribution);
+* $H$ are the hotspots and $G$ a longitudinal gradient;
+* $Z$ is a persistent Gaussian random field;
+* $\varepsilon$ is spatio-temporal AR(1) noise.
+
+By construction $\sum_s p(y,s) = 1$ and $\sum_s B(y,s) = B_{total}(y)$ in
+every year.
+
+```{r setup}
+library(pelagicOM)
+library(ggplot2)
+cfg <- om_biomass_config("BET_ICCAT")
+sim <- simulate_biomass(cfg)
+```
+
+The random draws always happen in the same order, so the same seed gives the
+same result:
+
+1. the process error of $B_{total}$;
+2. the persistent field $Z$;
+3. one Gaussian field per year for $\varepsilon$.
+
+## 1. Total biomass
+
+$B_{total}(y)$ follows a Pella-Tomlinson surplus-production model with an
+exogenous removal rate $u(y)$:
+
+$$
+\begin{aligned}
+SP(y) &= \tfrac{r}{p}\, B(y)\,\big(1 - (B(y)/K_y)^p\big) \\
+B(y+1) &= \max\Big(\big[B(y) + SP(y) - u(y)\, B(y)\big]\, e^{\epsilon_{y+1}},\; B_{floor}\Big)
+\end{aligned}
+$$
+
+The process error $\epsilon$ is AR(1), bias corrected so that
+$E[e^{\epsilon}] = 1$. $K_y = K (1 + K_{trend})^{y - y_0}$.
+
+```{r}
+str(cfg$population)
+reference_points(cfg$population)
+```
+
+The removal rate is drawn by phases: stable (`u_base`), a linear decline up
+to `u_peak`, a plateau, a recovery down to `u_end`, and stable again. The
+result is smoothed by a moving average of `u_smooth` years. Shocks
+(`events`) multiply the biomass in given years:
+
+```{r, fig.height = 6}
+fig_total_biomass(sim)
+```
+
+```{r}
+head(sim$pop)
+```
+
+`population$model` can also be `"logistic"` or any function
+`f(B, K, r, shape)` that returns the surplus production (see
+[Tuning](tuning.html)).
+
+## 2. Static habitat
+
+The static part of the log-density is fixed in time and contains:
+
+* **Latitudinal envelope.** A Gaussian on latitude, centred at
+  `lat_center`, with different standard deviations north and south
+  (`envelope_type = "latitude"`, the tropical core of Experimento 02). With
+  `envelope_type = "abs_latitude"` it is a Gaussian on the absolute latitude
+  instead: two symmetric bands, as for temperate species.
+* **Hotspots.** Gaussian elevations at fixed positions.
+* **Longitudinal gradient**, log-linear (`lon_gradient`).
+* **Persistent random field** with standard deviation `field_sd` and
+  spatial range `field_range` (degrees). It is obtained by smoothing white
+  noise with a separable Gaussian kernel on the lattice, normalised so that
+  every cell has the same marginal standard deviation.
+* **User layer** (optional), `custom_effect(cells)`, for example a habitat
+  covariate.
+
+```{r}
+str(cfg$habitat)
+```
+
+```{r, fig.height = 4.5}
+fig_base_habitat(sim)
+```
+
+The components are stored in `sim$base`:
+
+```{r, fig.height = 4}
+layer <- function(value, component) {
+    x <- sim$dom$geometry
+    x$value <- value
+    x$component <- component
+    x
+}
+comp <- rbind(layer(sim$base$hotspots, "Hotspots H(s)"),
+              layer(sim$base$field, "Persistent field Z(s)"),
+              layer(sim$base$envelope0, "Envelope E(first year, lat)"))
+ggplot(comp) +
+    geom_sf(aes(fill = value), colour = NA) +
+    scale_fill_gradient2(low = "grey20", mid = "white", high = "black") +
+    facet_wrap(~component) + coord_sf(expand = FALSE) +
+    labs(fill = "log scale") + theme_pub(base = 9) +
+    theme(legend.position = "right", panel.grid.major = element_blank())
+```
+
+`gaussian_random_field()` is the building block of the random fields:
+
+```{r, fig.height = 3.5}
+set.seed(1)
+f <- gaussian_random_field(list(n_row = 60, n_col = 120), range = 4, sd = 1)
+image(t(f), col = grey.colors(50), axes = FALSE, main = "range = 4, sd = 1")
+```
+
+## 3. Redistribution in time
+
+The envelope changes along a ramp $f(y) \in [0, 1]$ (linear or logistic)
+between `shift$start` and `shift$end`:
+
+$$
+\begin{aligned}
+sd_{north}(y) &= sd_{north}\,\big(1 + \text{north\_expansion}\; f(y)\big) \\
+sd_{south}(y) &= sd_{south}\,\big(1 + \text{south\_expansion}\; f(y)\big) \\
+c(y) &= c + \text{center\_drift}\; f(y)
+\end{aligned}
+$$
+
+An optional equatorial contraction lowers the log-density within
+$|\text{lat}| <$ `eq_band`. The weights are renormalised every year, so a
+wider envelope moves share from the central region to the outer regions
+without changing $B_{total}$.
+
+```{r}
+str(cfg$shift)
+head(sim$envelope_params, 3); tail(sim$envelope_params, 3)
+```
+
+```{r, fig.height = 4.5}
+fig_envelope_profiles(sim)
+```
+
+The same stock with and without redistribution:
+
+```{r, fig.height = 4}
+sim_off <- simulate_biomass(om_config_update(cfg, shift = list(enabled = FALSE)),
+                            long_table = FALSE, verbose = FALSE)
+reg <- rbind(transform(regional_summary(sim), run = "shift on"),
+             transform(regional_summary(sim_off), run = "shift off"))
+ggplot(reg, aes(Year, Share, colour = Region, linetype = run)) +
+    geom_line(linewidth = 0.7) +
+    scale_colour_manual(values = c(R01 = "grey55", R02 = "black",
+                                   R03 = "grey30")) +
+    labs(y = "Share of total biomass") + theme_pub()
+```
+
+## 4. Spatio-temporal noise
+
+$$
+\varepsilon(y, s) = \rho\, \varepsilon(y-1, s) + \sqrt{1 - \rho^2}\; \xi_y(s)
+$$
+
+where the $\xi_y$ are independent Gaussian fields with standard deviation
+`sd` and range `range`. The marginal standard deviation is `sd` in every
+year and the temporal correlation at lag $k$ is $\rho^k$.
+
+```{r}
+str(cfg$stochastic)
+round(cor(sim$noise[, "2000"], sim$noise[, "2001"]), 2)
+```
+
+## 5. Composition and the long table
+
+The object returned by `simulate_biomass()` holds the matrices
+(cells x years) `envelope`, `noise`, `logD`, `weights` and `biomass`. It
+also holds the long table `table`, one row per year and cell, which is the
+main product of Experimento 02:
+
+```{r}
+sim
+dim(sim$biomass)
+head(sim$table, 3)
+```
+
+## 6. Diagnostics
+
+`check_simulation()` runs two groups of checks:
+
+* **Structural checks** stop the run when they fail: the identities above,
+  no NA, Inf or negative values, unique Year x Cell, coherent regions.
+* **Pattern checks** only warn: the central region is the densest at the
+  start, and an active redistribution shifts share towards the outer
+  regions.
+
+```{r}
+chk <- check_simulation(sim)
+check_reproducibility(cfg)
+```
+
+Summaries used by the figures:
+
+```{r}
+head(regional_summary(sim), 3)
+head(centre_of_gravity(sim), 3)
+head(latitude_profile(sim), 3)
+```
+
+```{r, fig.height = 8}
+fig_maps(sim)
+```
+
+```{r, fig.height = 4}
+fig_region_biomass(sim)
+fig_region_share(sim)
+```
+
+```{r, fig.height = 3.5, fig.width = 10}
+fig_centre_gravity(sim)
+```
+
+```{r}
+fig_hovmoller(sim)
+```
+
+All eight figures can be built at once with `biomass_figures(sim)` or
+saved as PNG with `make_biomass_figures(sim, dir)`.
+
+## 7. Reproducibility
+
+The whole run is controlled by `cfg$general$seed`. `simulate_biomass()`
+seeds its own random stream with the RNG kinds of Experimento 02
+(Mersenne-Twister, Inversion, Rejection) and restores the caller's stream
+on exit:
+
+```{r}
+set.seed(123); a <- runif(1)
+set.seed(123); invisible(simulate_biomass(verbose = FALSE, long_table = FALSE))
+identical(a, runif(1))
+```

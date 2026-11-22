@@ -342,7 +342,15 @@ strategy_recovery_diagnostic <- function(td, cfg) {
         comp <- (m[i, ] / rowSums(m[i, ]))^(1 / 4)
         truth_k <- td$TrueFishingStrategy[i]
         k <- length(cfg$strategies$levels)
-        km <- stats::kmeans(comp, centers = k, nstart = 10, iter.max = 50)
+        ###@> Hartigan-Wong may report "Quick-TRANSfer stage steps exceeded
+        ###@> maximum" on ~50 000 points; the algorithm goes on and the
+        ###@> result is the same as in Experimento 02, so only this
+        ###@> warning is muffled...
+        km <- withCallingHandlers(
+            stats::kmeans(comp, centers = k, nstart = 10, iter.max = 50),
+            warning = function(w)
+                if (grepl("Quick-TRANSfer", conditionMessage(w)))
+                    invokeRestart("muffleWarning"))
     })
     conf <- table(cluster = km$cluster, strategy = truth_k)
     perms <- function(v) if (length(v) <= 1) list(v) else

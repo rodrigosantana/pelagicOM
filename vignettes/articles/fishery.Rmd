@@ -1,0 +1,256 @@
+---
+title: "Part II: the longline fishery"
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 9,
+                      fig.height = 4.5, dev = "ragg_png", dpi = 110)
+```
+
+Part II generates set-by-set pelagic longline operations on top of the
+biomass truth and keeps the **complete truth of the fishing process**: the
+latent strategy, the density at the set, every component of the
+catchability, the expected catch and so on. The causal order is
+
+> biomass → fleets → vessels → trips → sets → location → strategy → gear →
+> catchability → expected catch → true catch → companion species
+
+Effort is always the number of **hooks** per set. Everything that changes
+the catch per hook (fleet, vessel, strategy, HBF, creep, space, residual) is
+**catchability**.
+
+```{r setup}
+library(pelagicOM)
+library(ggplot2)
+sim  <- simulate_biomass(om_biomass_config("BET_ICCAT"), verbose = FALSE)
+fcfg <- om_fishery_config("BET_ICCAT")
+fish <- simulate_fishery(sim, fcfg)
+fish
+```
+
+Each stochastic module has its own seed (`fcfg$reproducibility$seeds`), so
+changing one process does not reshuffle the draws of the others:
+
+```{r}
+unlist(fcfg$reproducibility$seeds)
+```
+
+## 1. Fleets
+
+Each fleet has:
+
+* a size (vessel slots kept active) and a period of activity;
+* access to a set of regions, and a centre with a spread for its baseline
+  spatial preference;
+* seasonal weights for its trips and an effort trend (median hooks per set);
+* an HBF multiplier and a composition of fishing strategies;
+* a fleet effect on log q.
+
+```{r}
+knitr::kable(fish$fleets)
+```
+
+New fleets are created with `om_fleet()` (see [Tuning](tuning.html)).
+
+## 2. Vessels, trips and sets
+
+Each fleet keeps `n_vessels` slots filled. When a vessel retires (career
+~ N(`career_mean`, `career_sd`), at least `career_min` years), a new vessel
+enters the following year. The first cohort gets a uniform remaining career
+so that exits are staggered. Each vessel-year makes 5-10 trips, each in a
+quarter drawn with the fleet weights, and each trip makes 8-15 sets
+(`sets$unit = "per_trip"`). The alternative `"per_vessel_year"` draws 8-15
+sets per vessel-year, which is the literal original specification.
+
+```{r}
+head(fish$vessels)
+nrow(fish$trips)
+```
+
+```{r, fig.height = 3.5}
+av <- active_vessels_by_year(fish$vessel_years)
+av$Year <- as.integer(as.character(av$Year))
+ggplot(av, aes(Year, n_vessels, colour = Fleet)) +
+    geom_line() + scale_colour_grey(end = 0.75) +
+    labs(y = "Active vessels") + theme_pub()
+```
+
+```{r, fig.height = 4}
+fig_effort_time(fish)
+```
+
+## 3. Where the sets are made
+
+Within its footprint, a fleet chooses the cell of a set with probability
+
+$$
+P(s) \propto D(y, s)^{\theta}\; g_f(s)
+$$
+
+* $\theta$ is `preferential_sampling_strength` (1 in the base; 0 removes the
+  dependence on density).
+* $g_f$ is a Gaussian preference around the fleet centre.
+* The **footprint** is the accessible area (regions of the fleet), revealed
+  from the centre outwards as the fleet expands (`expansion_profile`, a
+  function of the years since the fleet started).
+* With probability `fidelity`, a set repeats the cell of the previous set
+  of the same vessel-year.
+
+```{r}
+str(fcfg$spatial)
+table(fish$data$SpatialChoice) / nrow(fish$data)
+```
+
+```{r, fig.height = 8}
+fig_effort_maps(fish)
+```
+
+## 4. Fishing strategy and gear
+
+The latent strategy (S1, S2, S3) of each set is drawn from the fleet
+composition. The odds of `drift_level` (S1) grow in time
+(`drift_S1_odds`). Hooks per set are lognormal around the fleet median
+(CV `hooks_cv`, truncated to `hooks_range`). HBF follows the median of the
+strategy, multiplied by the fleet multiplier, a persistent vessel habit and
+lognormal noise per set:
+
+```{r}
+str(fcfg$gear$hbf_by_strategy)
+```
+
+```{r, fig.height = 3.5, fig.width = 11}
+fig_strategy(fish)
+```
+
+```{r}
+fig_gear(fish)
+```
+
+## 5. Catchability
+
+$$
+\begin{aligned}
+\log q = \log q_0 &+ \beta_{fleet} + b_{vessel} + \beta_{strategy} + f(HBF) \\
+&+ c\,(y - y_0) + \beta_{quarter} + \beta_{region} + Z_q(s) + e
+\end{aligned}
+$$
+
+The terms are:
+
+* $b_{vessel}$ is a persistent random vessel effect (`vessel_sd`);
+* $f(HBF)$ is saturating, $a(1 - e^{-b(h-4)})$, centred at the reference
+  HBF;
+* $c$ is the creep (1% per year in the base);
+* $Z_q$ is a persistent spatial field of catchability;
+* $e$ is a residual per set.
+
+```{r, fig.height = 3.5}
+hb <- data.frame(HBF = 4:26)
+hb$effect <- hbf_effect_fun(hb$HBF, fcfg$catchability$hbf)
+ggplot(hb, aes(HBF, effect)) + geom_line() +
+    geom_vline(xintercept = fcfg$catchability$hbf$ref, linetype = "22") +
+    labs(y = "f(HBF) in log q") + theme_pub()
+```
+
+```{r}
+fig_catchability_time(fish)
+```
+
+```{r, fig.height = 7}
+fig_catchability_factors(fish)
+```
+
+```{r, fig.width = 6}
+fig_vessel_effects(fish)
+```
+
+```{r}
+cq <- catchability_summary_table(fish$data)
+knitr::kable(head(cq[cq$factor != "Year", c("factor", "level", "n_sets",
+                                            "mean_log_q")], 12), digits = 3)
+```
+
+## 6. Catch of the target species
+
+The expected catch of a set is $\mu = q \times \text{Hooks} \times D(y, s)$.
+Density is used, not biomass, because the gear samples a local volume. The
+true catch is drawn from a Tweedie distribution (compound Poisson-Gamma,
+power `power`, dispersion `dispersion`) or, optionally, from a
+delta-lognormal one:
+
+```{r}
+str(fcfg$catch_process)
+set.seed(1)
+x <- rtweedie_cpg(rep(0.5, 1e5), p = 1.4, phi = 1)
+c(mean = mean(x), prop_zero = mean(x == 0))
+```
+
+```{r, fig.height = 7}
+fig_catch_distribution(fish)
+```
+
+## 7. Companion species
+
+Each companion species $j$ has an expected catch
+
+$$
+\begin{aligned}
+\log \mu_j = \log(\text{ref}_j/1000) &+ \log(\text{Hooks}) + \beta_j[\text{strategy}] + h_j\, g(HBF) \\
+&+ E_j(\text{lat}) + \log T_j(y) + e
+\end{aligned}
+$$
+
+and a Tweedie catch. The composition of the catch is the **signature of the
+latent strategy**: deep sets (S1) catch BET and ALB, shallow sets (S3) catch
+SWO and BSH. Methods based on clusters or on direct principal components
+look for exactly this signature.
+
+```{r}
+str(fcfg$species$params$SWO)
+```
+
+```{r}
+fig_species_composition(fish)
+strategy_recovery_diagnostic(fish$data, fcfg)$summary
+```
+
+## 8. Nominal CPUE versus the truth
+
+```{r, fig.height = 8}
+fig_cpue_vs_biomass(fish)
+```
+
+```{r}
+fig_cpue_fleet_strategy(fish)
+```
+
+The log-log slope of nominal CPUE on true biomass is a quick diagnostic of
+hyperstability (β < 1):
+
+```{r}
+tg <- cpue_biomass_table(fish$data, fish$truth)
+tr <- cpue_biomass_table(fish$data, fish$truth, "Region")
+knitr::kable(rbind(cpue_biomass_slopes(tg), cpue_biomass_slopes(tr)),
+             digits = 3)
+```
+
+## 9. Structural checks
+
+`simulate_fishery()` always runs `check_fishery_truth()`, which stops on any
+violation:
+
+* non-negative, finite catches;
+* hooks and HBF within their ranges;
+* identifier hierarchy (set within trip within vessel within fleet);
+* cells and coordinates taken from the biomass truth;
+* regional access of each fleet;
+* vessel active in the year of the set;
+* the identity $E[C] = q \times \text{Hooks} \times D$.
+
+```{r}
+check_fishery_truth(fish$data, fish$truth, fish$vessels, fcfg)
+```
+
+All twelve figures are available through `fishery_figures(fish, scenarios)`
+and `make_fishery_figures()`. The diagnostic tables are listed in
+`?fishery_diagnostics`.

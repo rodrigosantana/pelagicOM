@@ -1,0 +1,148 @@
+---
+title: "Observation process and scenario data sets"
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 9,
+                      fig.height = 4, dev = "ragg_png", dpi = 110)
+```
+
+The fishery truth holds every latent variable. A real logbook does not. The
+**observation process** turns the truth into an *observed* data set, and the
+**scenarios** select regions, variables and observation profiles to build
+the data sets on which CPUE standardisations are tested.
+
+```{r setup}
+library(pelagicOM)
+library(ggplot2)
+sim <- simulate_biomass(verbose = FALSE)
+## fleets reduced to keep this article fast
+fcfg <- om_fishery_config("BET_ICCAT",
+    fleets = list(A = list(n_vessels = 12), B = list(n_vessels = 10),
+                  C = list(n_vessels = 9), D = list(n_vessels = 10),
+                  E = list(n_vessels = 8)))
+fish <- simulate_fishery(sim, fcfg, verbose = FALSE)
+```
+
+## Observed and latent columns
+
+```{r}
+fish$observed_columns
+fish$latent_columns
+```
+
+An observed data set has these columns:
+
+* the observable variables;
+* `FishingStrategy`, the true strategy, which may be misclassified or
+  missing;
+* the catch of the target species (`Catch`) and of each companion species
+  (`Catch_<sp>`).
+
+## Observation profiles
+
+A profile is a list of periods. Each period sets one parameter per
+mechanism, and 0 switches a mechanism off:
+
+| mechanism | parameter | effect |
+|---|---|---|
+| position error | `position_sd` | Gaussian error (degrees), re-anchored to the nearest domain cell |
+| coordinate resolution | `coord_resolution` | 1 or 5; with 5, positions become 5x5 centres and `Cell_ID` becomes unknown |
+| missing HBF | `hbf_missing` | probability that `HooksBetweenFloats` is NA |
+| effort error | `hooks_cv`, `hooks_round` | multiplicative lognormal error and rounding of hooks |
+| catch error | `catch_cv`, `catch_round` | multiplicative error and rounding of catches (zeros stay zero) |
+| missing strategy | `strategy_missing` | probability that `FishingStrategy` is NA |
+| missing vessel | `vessel_missing` | probability that `VesselID` is NA |
+| record loss | `record_loss` | probability that a set is lost |
+
+`strategies$misclassification` adds a misclassification of the observed
+strategy. The observed region is always recomputed from the observed
+latitude.
+
+```{r}
+str(fcfg$observation$temporal)
+```
+
+Every profile starts from the same seed (`seeds$observation`), so profiles
+differ only by their parameters:
+
+```{r}
+obs <- apply_observation_process(fish$data, "temporal", fcfg, fish$truth)
+unlist(attr(obs, "mechanisms"))
+```
+
+## Scenarios
+
+A scenario has:
+
+* a name;
+* the regions kept;
+* the variables removed (`drop`);
+* the observation profile;
+* a description of its objective.
+
+The `BET_ICCAT` preset has the eight scenarios of Experimento 02:
+
+```{r}
+sc <- do.call(rbind, lapply(fcfg$scenarios, function(s)
+    data.frame(name = s$name, regions = paste(s$regions, collapse = "+"),
+               drop = paste(s$drop, collapse = ", "),
+               observation = s$observation, objective = s$objective)))
+knitr::kable(sc)
+```
+
+```{r}
+scen <- generate_scenarios(fish)
+scen
+knitr::kable(scen$metadata[, c("name", "period", "n_sets",
+                               "differences_from_complete")])
+```
+
+```{r, fig.height = 3.5, fig.width = 11}
+fig_observation_quality(fish, scen)
+```
+
+## Your own profiles and scenarios
+
+Profiles and scenarios are ordinary lists in the configuration. For example,
+the code below adds two things:
+
+* a "modern noisy" profile, with small position and catch errors over the
+  whole period and no vessel identity before 1990;
+* two scenarios that use this profile: one global, and one restricted to
+  the southern region without HBF.
+
+```{r}
+fcfg2 <- fcfg
+fcfg2$observation$modern_noisy <- list(
+    list(period = c(1950, 1989), position_sd = 0.25, coord_resolution = 1,
+         hbf_missing = 0.2, hooks_cv = 0.05, hooks_round = 10,
+         catch_cv = 0.10, catch_round = 0, strategy_missing = 1,
+         vessel_missing = 1, record_loss = 0.05),
+    list(period = c(1990, 2025), position_sd = 0.25, coord_resolution = 1,
+         hbf_missing = 0, hooks_cv = 0.05, hooks_round = 10,
+         catch_cv = 0.10, catch_round = 0, strategy_missing = 1,
+         vessel_missing = 0, record_loss = 0))
+fcfg2$scenarios <- list(
+    list(name = "noisy_global", regions = c("R01", "R02", "R03"),
+         drop = character(0), observation = "modern_noisy",
+         objective = "Small errors everywhere, no vessel ID before 1990"),
+    list(name = "noisy_R03_without_hbf", regions = "R03",
+         drop = "HooksBetweenFloats", observation = "modern_noisy",
+         objective = "Southern region without HBF"))
+fish2 <- simulate_fishery(sim, fcfg2, verbose = FALSE)
+scen2 <- generate_scenarios(fish2)
+scen2
+d <- scen2$datasets$noisy_global
+tapply(is.na(d$VesselID), d$Year < 1990, mean)
+```
+
+The truth does not depend on the observation profiles: `fish2$data` is
+identical to `fish$data`.
+
+```{r}
+identical(fish$data, fish2$data)
+```
+
+The scenario data sets are written to `outputs/datasets/` by
+`om_write_fishery()` (see [Outputs](outputs.html)).

@@ -1,0 +1,296 @@
+---
+title: "Configuration reference: every parameter"
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", echo = FALSE)
+library(pelagicOM)
+bcfg <- om_biomass_config("BET_ICCAT")
+fcfg <- om_fishery_config("BET_ICCAT")
+
+fmt <- function(v) {
+    if (is.null(v)) return("NULL")
+    if (is.function(v)) return("<function>")
+    if (is.list(v)) return(if (!length(v)) "list()" else
+                               sprintf("list of %d (table below)", length(v)))
+    paste(deparse(v, width.cutoff = 500L), collapse = "")
+}
+flatten_cfg <- function(x, prefix = "", skip = character()) {
+    out <- character()
+    for (nm in names(x)) {
+        p <- if (nzchar(prefix)) paste0(prefix, "$", nm) else nm
+        if (p %in% skip) next
+        v <- x[[nm]]
+        if (is.list(v) && length(v) && !is.null(names(v)) &&
+            all(nzchar(names(v))))
+            out <- c(out, flatten_cfg(v, p, skip))
+        else out[p] <- fmt(v)
+    }
+    out
+}
+param_table <- function(cfg, desc, skip = character()) {
+    v <- flatten_cfg(cfg, skip = skip)
+    d <- desc[names(v)]
+    if (anyNA(d)) stop("parameters without description: ",
+                       paste(names(v)[is.na(d)], collapse = ", "))
+    data.frame(parameter = paste0("`", names(v), "`"),
+               `BET_ICCAT value` = paste0("`", v, "`"),
+               meaning = unname(d), check.names = FALSE)
+}
+kt <- function(x) knitr::kable(x, row.names = FALSE)
+```
+
+This page lists every parameter of the two configurations, with its value
+in the `BET_ICCAT` preset (Experimento 02) and its meaning. The values are
+read from the package, so this page always matches the code. Parameters are
+addressed as `section$name`. Change them with `om_config_update()` or with
+the `...` of the configuration functions:
+
+```{r, echo = TRUE, eval = FALSE}
+cfg <- om_biomass_config("BET_ICCAT", population = list(r = 0.4))
+```
+
+## Biomass configuration (`om_biomass_config()`)
+
+```{r}
+bdesc <- c(
+  "general$label" = "Label of the run, appended to the output file names.",
+  "general$seed" = "Single seed of Part I (process error, persistent field, yearly fields, in this order).",
+  "temporal$year_start" = "First year.",
+  "temporal$year_end" = "Last year.",
+  "spatial$source" = "`\"iccat\"`: bundled ICCAT 1x1 grid; `\"gpkg\"`: read `spatial$gpkg` with `om_domain_from_gpkg()`.",
+  "spatial$gpkg" = "Path to the GeoPackage when `source = \"gpkg\"`.",
+  "spatial$layer_grid" = "Grid layer of the GeoPackage.",
+  "spatial$layer_stock" = "Stock-area layer of the GeoPackage.",
+  "spatial$stock_code" = "Stock area (field CODE); see `iccat_stocks()`.",
+  "spatial$id_field" = "Field with the permanent cell identifier.",
+  "spatial$lon_field" = "Field with the longitude of the representative point of the cell.",
+  "spatial$lat_field" = "Field with the latitude of the representative point of the cell.",
+  "spatial$selection" = "Cells of the stock area (gpkg): `\"intersects\"` (Exp. 02) or `\"point_on_surface\"`.",
+  "spatial$region_breaks" = "Ascending latitude limits of the regions.",
+  "spatial$region_labels" = "Region labels from north to south (one more than the breaks).",
+  "population$model" = "Surplus production: `\"pella_tomlinson\"`, `\"logistic\"` or a function `f(B, K, r, shape)`.",
+  "population$K" = "Carrying capacity (t).",
+  "population$r" = "Intrinsic growth rate (1/year).",
+  "population$shape" = "Pella-Tomlinson shape p (1 = Schaefer).",
+  "population$B0_frac" = "Initial biomass as a fraction of K.",
+  "population$u_base" = "Removal rate before the decline.",
+  "population$decline$start" = "First year of the increase of the removal rate.",
+  "population$decline$end" = "Year in which the removal rate reaches its peak.",
+  "population$decline$u_peak" = "Peak removal rate (plateau).",
+  "population$recovery$start" = "First year of the decrease of the removal rate.",
+  "population$recovery$end" = "Year in which the removal rate reaches `u_end`.",
+  "population$recovery$u_end" = "Final removal rate.",
+  "population$u_smooth" = "Window (years) of the moving average that smooths the phases.",
+  "population$K_trend" = "Trend in K (fraction per year; 0 = none).",
+  "population$proc_sd" = "SD of the AR(1) process error (log scale).",
+  "population$proc_rho" = "Autocorrelation of the process error.",
+  "population$events" = "Shocks: list of `list(year, log_shock)`.",
+  "population$B_floor_frac" = "Numerical floor: B >= B_floor_frac * K.",
+  "habitat$envelope_type" = "`\"latitude\"` (Gaussian on latitude, tropical) or `\"abs_latitude\"` (Gaussian on |lat|, temperate).",
+  "habitat$lat_center" = "Centre of the envelope (degrees; absolute latitude for `abs_latitude`).",
+  "habitat$lat_sd_north" = "SD of the envelope north of the centre (or in the northern hemisphere).",
+  "habitat$lat_sd_south" = "SD of the envelope south of the centre (or in the southern hemisphere).",
+  "habitat$hotspots" = "Gaussian elevations of the log-density: list of `list(lon, lat, sd_lon, sd_lat, amp)`.",
+  "habitat$lon_gradient" = "Log-linear gradient per degree of longitude (positive = denser to the east).",
+  "habitat$field_sd" = "SD of the persistent random field (log scale).",
+  "habitat$field_range" = "Range (kernel SD, degrees) of the persistent field.",
+  "habitat$custom_effect" = "Optional function of the cell table returning a log-scale layer added to the habitat.",
+  "shift$enabled" = "Switch of the whole redistribution.",
+  "shift$start" = "Year in which the ramp starts (f = 0).",
+  "shift$end" = "Year in which the ramp saturates (f = 1).",
+  "shift$ramp" = "`\"linear\"` or `\"logistic\"`.",
+  "shift$ramp_steepness" = "Steepness of the logistic ramp.",
+  "shift$north_expansion" = "Relative widening of the northern SD at the end of the ramp.",
+  "shift$south_expansion" = "Relative widening of the southern SD at the end of the ramp.",
+  "shift$center_drift" = "Drift of the centre (degrees at the end of the ramp; positive = north / poleward).",
+  "shift$equatorial_contraction" = "Reduction (log) of the density within the equatorial band at the end of the ramp.",
+  "shift$eq_band" = "Half-width (degrees) of the equatorial band.",
+  "stochastic$enabled" = "Switch of the spatio-temporal noise.",
+  "stochastic$sd" = "Marginal SD of the noise (log scale).",
+  "stochastic$range" = "Spatial range (kernel SD, degrees) of the noise.",
+  "stochastic$rho" = "Temporal AR(1) autocorrelation of the noise.",
+  "output$save_rds" = "Write `biomass_true_<label>.rds`.",
+  "output$save_csv" = "Write the long table as `.csv.gz`.",
+  "output$save_figures" = "Write the figures.",
+  "output$map_years" = "Years of the maps.",
+  "output$fig_width" = "Default figure width (inches).",
+  "output$fig_height" = "Default figure height (inches).",
+  "output$fig_dpi" = "Figure resolution.")
+kt(param_table(bcfg, bdesc))
+```
+
+**Hotspots** (`habitat$hotspots`):
+
+```{r}
+kt(do.call(rbind, lapply(bcfg$habitat$hotspots, as.data.frame)))
+```
+
+## Fishery configuration (`om_fishery_config()`)
+
+```{r}
+fdesc <- c(
+  "general$label" = "Label of the run, appended to the output file names.",
+  "reproducibility$seeds$vessels" = "Seed of the vessel careers.",
+  "reproducibility$seeds$trips" = "Seed of trips per vessel-year and quarters.",
+  "reproducibility$seeds$sets" = "Seed of sets per trip.",
+  "reproducibility$seeds$spatial" = "Seed of the spatial choice and fidelity.",
+  "reproducibility$seeds$strategy" = "Seed of the latent strategies.",
+  "reproducibility$seeds$gear" = "Seed of hooks and HBF (one stream).",
+  "reproducibility$seeds$catchability" = "Seed of vessel effects, spatial q field and residuals.",
+  "reproducibility$seeds$catch" = "Seed of the catch of the target species.",
+  "reproducibility$seeds$species" = "Seed of the companion species (+1: strategy-recovery diagnostic).",
+  "reproducibility$seeds$observation" = "Seed of the observation process (same for every profile).",
+  "temporal$year_start" = "First year of the fishery (within the biomass years).",
+  "temporal$year_end" = "Last year of the fishery.",
+  "temporal$quarters" = "Quarters (fixed: 1:4).",
+  "temporal$biomass_within_year" = "Biomass within the year: `\"constant\"` (only option).",
+  "vessels$turnover_enabled" = "Retiring vessels are replaced; FALSE keeps the same vessels all the time.",
+  "vessels$career_mean" = "Mean career (years).",
+  "vessels$career_sd" = "SD of the career (years).",
+  "vessels$career_min" = "Minimum career (years).",
+  "trips$per_vessel_year" = "Range of trips per vessel-year.",
+  "sets$per_vessel_year" = "Range of sets per vessel-year (`unit = \"per_vessel_year\"`).",
+  "sets$per_trip" = "Range of sets per trip (`unit = \"per_trip\"`, base).",
+  "sets$unit" = "`\"per_trip\"` or `\"per_vessel_year\"`.",
+  "effort$hooks_range" = "Truncation range of hooks per set.",
+  "effort$hooks_cv" = "CV of hooks per set around the fleet median.",
+  "effort$trend_enabled" = "Time trend of the median hooks (FALSE: first anchor only).",
+  "gear$hbf_range" = "Range of hooks between floats.",
+  "gear$hbf_by_strategy$S1" = "Anchors (year = median HBF) of strategy S1.",
+  "gear$hbf_by_strategy$S2" = "Anchors (year = median HBF) of strategy S2.",
+  "gear$hbf_by_strategy$S3" = "Anchors (year = median HBF) of strategy S3.",
+  "gear$hbf_vessel_sd" = "SD (log) of the persistent HBF habit of each vessel.",
+  "gear$hbf_sd" = "SD (log) of the HBF noise per set.",
+  "gear$trend_enabled" = "Time trend of the HBF medians (FALSE: first anchor only).",
+  "gear$hbf_bin_breaks" = "HBF classes used by diagnostics and figures.",
+  "strategies$levels" = "Names of the fishing strategies.",
+  "strategies$drift_enabled" = "Drift of the strategy composition in time.",
+  "strategies$drift_level" = "Strategy whose odds drift.",
+  "strategies$drift_S1_odds" = "Anchors of the odds multiplier of `drift_level`.",
+  "strategies$misclassification" = "Probability that the observed strategy is wrong.",
+  "spatial$preferential_sampling_strength" = "theta in P(s) ~ D^theta g(s) (0 = no dependence on density).",
+  "spatial$fidelity" = "Probability of repeating the cell of the previous set of the vessel-year.",
+  "spatial$core_preference_enabled" = "Gaussian preference around the fleet centre.",
+  "spatial$expansion_enabled" = "Footprint grows from the centre with the years of activity.",
+  "spatial$expansion_profile" = "Anchors (years since start = fraction of the accessible area).",
+  "spatial$density_floor" = "Floor added to the density before the log.",
+  "catchability$q0" = "Reference catchability (km2 per hook).",
+  "catchability$vessel_sd" = "SD of the random vessel effect on log q.",
+  "catchability$strategy_effect" = "Effect of each strategy on log q.",
+  "catchability$hbf$effect" = "Asymptote a of f(HBF) = a (1 - exp(-b (HBF - 4))).",
+  "catchability$hbf$rate" = "Rate b of f(HBF).",
+  "catchability$hbf$ref" = "Reference HBF (f centred at it).",
+  "catchability$hbf$by_fleet" = "Multiplier of the HBF effect by fleet (missing fleets get 1).",
+  "catchability$creep" = "Effort creep per year on log q.",
+  "catchability$creep_enabled" = "Switch of the creep.",
+  "catchability$quarter_effect" = "Effect of each quarter on log q.",
+  "catchability$region_effect" = "Effect of each region on log q.",
+  "catchability$spatial$enabled" = "Persistent spatial field of log q.",
+  "catchability$spatial$sd" = "SD of the spatial field of log q.",
+  "catchability$spatial$range" = "Range (degrees) of the spatial field of log q.",
+  "catchability$residual_sd" = "SD of the residual of log q per set.",
+  "catch_process$distribution" = "`\"tweedie\"` or `\"delta_lognormal\"`.",
+  "catch_process$power" = "Tweedie power p (1 < p < 2).",
+  "catch_process$dispersion" = "Tweedie dispersion phi (Var = phi mu^p).",
+  "catch_process$delta$logit_a" = "Delta-lognormal: intercept of logit P(catch > 0) on log mu.",
+  "catch_process$delta$logit_b" = "Delta-lognormal: slope of logit P(catch > 0) on log mu.",
+  "catch_process$delta$sdlog" = "Delta-lognormal: SD (log) of positive catches.",
+  "species$enabled" = "Simulate companion species.",
+  "species$target" = "Name of the target species (column `TrueCatch` / `Catch`).",
+  "species$companions" = "Names of the companion species.",
+  "species$power" = "Tweedie power of the companion catches.",
+  "species$dispersion" = "Tweedie dispersion of the companion catches.",
+  "species$residual_sd" = "SD (log) of the noise per set and species.",
+  "species$cluster_sample" = "Sets sampled by the strategy-recovery diagnostic.",
+  "output$save_csv" = "Write `.csv.gz` copies of the truth and of the data sets.",
+  "output$save_figures" = "Write the figures.",
+  "output$map_years" = "Years of the effort maps.",
+  "output$fig_width" = "Default figure width (inches).",
+  "output$fig_height" = "Default figure height (inches).",
+  "output$fig_dpi" = "Figure resolution.")
+kt(param_table(fcfg, fdesc, skip = c("fleets", "species$params",
+                                     "observation", "scenarios")))
+```
+
+### Fleets (`fleets$<name>`, see `om_fleet()`)
+
+| field | meaning |
+|---|---|
+| `n_vessels` | vessel slots kept active |
+| `year_start`, `year_end` | period of activity |
+| `regions` | regions the fleet can fish |
+| `core_lon`, `core_lat`, `core_sd` | centre and spread of the baseline spatial preference |
+| `quarter_weights` | relative frequency of trips per quarter |
+| `hooks_median` | anchors (year = median hooks per set) |
+| `hbf_mult` | multiplier of HBF |
+| `strategy_comp` | composition of strategies (sums to 1) |
+| `q_effect` | fleet effect on log q |
+
+```{r}
+fl <- do.call(rbind, lapply(names(fcfg$fleets), function(nm) {
+    f <- fcfg$fleets[[nm]]
+    data.frame(fleet = nm, n_vessels = f$n_vessels,
+               period = paste(f$year_start, f$year_end, sep = "-"),
+               regions = paste(f$regions, collapse = "+"),
+               core = sprintf("(%g, %g) sd %g", f$core_lon, f$core_lat,
+                              f$core_sd),
+               quarter_weights = paste(f$quarter_weights, collapse = "/"),
+               hooks_median = paste(sprintf("%s:%g", names(f$hooks_median),
+                                            f$hooks_median), collapse = " "),
+               hbf_mult = f$hbf_mult,
+               strategy_comp = paste(sprintf("%s %.2f", names(f$strategy_comp),
+                                             f$strategy_comp), collapse = ", "),
+               q_effect = f$q_effect)
+}))
+kt(fl)
+```
+
+### Companion species (`species$params$<sp>`)
+
+| field | meaning |
+|---|---|
+| `ref` | t per 1000 hooks at the reference |
+| `strategy_effect` | log effect of each strategy |
+| `hbf_effect` | multiplier of g(HBF), the HBF shape of the target |
+| `lat_center`, `lat_sd`, `use_abs_lat` | latitudinal envelope of the species |
+| `trend` | anchors of a multiplicative time trend |
+
+```{r}
+sp <- do.call(rbind, lapply(names(fcfg$species$params), function(s) {
+    p <- fcfg$species$params[[s]]
+    data.frame(species = s, ref = p$ref,
+               strategy_effect = paste(sprintf("%s %+.1f",
+                                               names(p$strategy_effect),
+                                               p$strategy_effect),
+                                       collapse = ", "),
+               hbf_effect = p$hbf_effect, lat_center = p$lat_center,
+               lat_sd = p$lat_sd, use_abs_lat = p$use_abs_lat,
+               trend = paste(sprintf("%s:%g", names(p$trend), p$trend),
+                             collapse = " "))
+}))
+kt(sp)
+```
+
+### Observation profiles (`observation$<profile>`)
+
+Each profile is a list of periods. The meaning of every mechanism is in
+[Observation and scenarios](observation-scenarios.html).
+
+```{r}
+ob <- do.call(rbind, lapply(names(fcfg$observation), function(pr)
+    do.call(rbind, lapply(fcfg$observation[[pr]], function(p)
+        data.frame(profile = pr, period = paste(p$period, collapse = "-"),
+                   as.data.frame(p[setdiff(names(p), "period")]))))))
+kt(ob)
+```
+
+### Scenarios (`scenarios`)
+
+```{r}
+sc <- do.call(rbind, lapply(fcfg$scenarios, function(s)
+    data.frame(name = s$name, regions = paste(s$regions, collapse = "+"),
+               drop = paste(s$drop, collapse = ", "),
+               observation = s$observation, objective = s$objective)))
+kt(sc)
+```

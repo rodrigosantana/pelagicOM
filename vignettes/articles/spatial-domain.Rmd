@@ -1,0 +1,202 @@
+---
+title: "Spatial domain: ICCAT grid, stock areas and regions"
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 8,
+                      fig.height = 5, dev = "ragg_png", dpi = 110)
+```
+
+Every simulation runs on a **spatial domain**: a set of cells on a regular
+1x1 degree lattice, each with an identifier, a representative point, a
+geodesic area and a latitudinal region. A domain is an object of class
+`om_domain` with the same components as the domain of Experimento 02:
+
+| component | content |
+|---|---|
+| `cells` | one row per cell: `Cell_ID`, `Longitude`, `Latitude`, `Nominal_lon0`, `Nominal_lat0` (south-west corner of the nominal cell), `Row`, `Col` (lattice indices), `Area_km2`, `Area_frac` (fraction of the nominal cell that is sea), `Region` |
+| `geometry` | `sf` polygons of the cells (used only by maps) |
+| `lattice` | origin and size of the integer lattice used by the Gaussian random fields |
+| `regions` | latitude `breaks` and `labels` of the regions |
+| `meta` | provenance (source, stock code, area method, bounding box, ...) |
+
+```{r setup}
+library(pelagicOM)
+library(ggplot2)
+```
+
+## The bundled ICCAT 1x1 grid
+
+The package ships the 10,051 cells of the official ICCAT 1x1 grid
+(layer `grids_01x01` of the ICCAT GIS GeoPackage). The cells are clipped by
+the coastline and their areas are geodesic. `om_domain_iccat()` builds a
+domain from it without any GIS file. For the BET-A stock area the result is
+exactly the domain of Experimento 02:
+
+```{r}
+dom <- om_domain_iccat("BET-A")
+dom
+head(dom$cells)
+str(dom$lattice)
+```
+
+Coastal cells are only partly sea (`Area_frac < 1`) and high-latitude cells
+are smaller. The geodesic area is therefore what turns density (t/km²) into
+biomass (t):
+
+```{r, fig.height = 4}
+ggplot(dom$cells, aes(Latitude, Area_km2, colour = Area_frac < 1)) +
+    geom_point(size = 0.4) +
+    scale_colour_manual(values = c("black", "grey65"),
+                        labels = c("open ocean", "coastal (clipped)")) +
+    labs(y = "Cell area (km²)", colour = NULL) +
+    theme_pub()
+```
+
+## ICCAT stock areas
+
+Every stock area of the ICCAT GeoPackage is available. A cell belongs to a
+stock area when a point on its surface lies inside the stock polygon. BET-A
+is identical to the ICCAT Convention area, so it keeps all cells, as in
+Experimento 02.
+
+```{r}
+knitr::kable(iccat_stocks()[, c("stock_code", "name", "n_cells")])
+```
+
+```{r, fig.height = 6}
+show_stocks <- function(codes) {
+    g <- iccat_geometry()
+    do.call(rbind, lapply(codes, function(cd) {
+        d <- om_domain_iccat(cd, geometry = FALSE, verbose = FALSE)
+        x <- g[g$Cell_ID %in% d$cells$Cell_ID, ]
+        x$stock <- cd
+        x
+    }))
+}
+m <- show_stocks(c("ALB-N", "ALB-S", "ALB-M", "SKJ-E", "SKJ-W", "BFT-W"))
+ggplot(m) +
+    geom_sf(fill = "grey30", colour = NA) +
+    facet_wrap(~stock, ncol = 3) +
+    coord_sf(expand = FALSE) +
+    labs(title = "Cells of some ICCAT stock areas") +
+    theme_pub(base = 9) +
+    theme(panel.grid.major = element_blank())
+```
+
+## Latitudinal regions
+
+Regions are latitude bands defined by ascending `region_breaks` and by
+`region_labels` listed **from north to south**. The default is the rule of
+Experimento 02: R01 for lat > 20, R02 for -20 ≤ lat ≤ 20 and R03 for
+lat < -20.
+
+```{r}
+classify_regions(c(-35, -20, 0, 20, 35))
+table(dom$cells$Region)
+```
+
+Any number of bands can be used. Regions without cells in a domain are
+dropped with a message:
+
+```{r, fig.height = 4.5}
+dom_alb <- om_domain_iccat("ALB-N", region_breaks = c(25, 40),
+                           region_labels = c("NORTH", "CENTRAL", "SOUTH"))
+table(dom_alb$cells$Region)
+g <- dom_alb$geometry
+g$Region <- dom_alb$cells$Region
+ggplot(g) +
+    geom_sf(aes(fill = Region), colour = NA) +
+    scale_fill_grey(start = 0.25, end = 0.8) +
+    coord_sf(expand = FALSE) +
+    labs(title = "ALB-N with three regions") +
+    theme_pub() + theme(panel.grid.major = element_blank())
+```
+
+The regions are part of the domain. They are copied into the configuration
+of the simulation, and they decide which cells each fleet can fish and how
+the scenario data sets are filtered.
+
+## Reading a GeoPackage
+
+`om_domain_from_gpkg()` is the function that built the domain of
+Experimento 02 from `ICCAT_gis.gpkg`. It works as follows:
+
+1. It reads the grid layer and a stock-area layer.
+2. It repairs invalid geometries.
+3. It keeps the cells that belong to the stock.
+4. It computes geodesic areas with `lwgeom`.
+5. It derives the lattice indices and the regions.
+
+With the defaults it returns the cells, lattice and polygons of Experimento 02
+exactly (this is checked by the package tests).
+
+```{r, eval = FALSE}
+gpkg <- "Experimento_02/ICCAT/ICCAT_gis.gpkg"
+inspect_geopackage(gpkg, layers = "albacore_tuna_stock_areas")
+
+dom_bet <- om_domain_from_gpkg(gpkg)                      # BET-A, Exp. 02
+dom_alb <- om_domain_from_gpkg(gpkg,
+                               layer_stock = "albacore_tuna_stock_areas",
+                               stock_code = "ALB-S",
+                               selection = "point_on_surface")
+```
+
+The `selection` argument chooses the rule:
+
+* `"intersects"` keeps every cell that touches the stock polygon. This is
+  the rule of Experimento 02 and is adequate when the stock area is the whole
+  Convention area.
+* `"point_on_surface"` keeps a cell when a point on its surface lies inside
+  the polygon. Cells that only share an edge with the boundary of a smaller
+  stock area are left out, and the cells are the same as those of
+  `om_domain_iccat()`.
+
+A simulation can also read the GeoPackage itself, through
+`spatial$source = "gpkg"` in the biomass configuration:
+
+```{r, eval = FALSE}
+cfg <- om_biomass_config("BET_ICCAT",
+                         spatial = list(source = "gpkg", gpkg = gpkg))
+sim <- simulate_biomass(cfg)    # identical to the bundled-grid run
+```
+
+## Synthetic grids
+
+For teaching, tests or other oceans, `om_domain_grid()` builds a
+rectangular 1x1 grid. `exclude` removes cells (for example land) through a
+function of the cell centres. Areas are geodesic on the WGS84 ellipsoid,
+computed exactly as for the ICCAT grid.
+
+```{r, fig.height = 4}
+basin <- om_domain_grid(lon = c(40, 100), lat = c(-40, 20),
+                        exclude = function(lon, lat) lat > 10 & lon < 60,
+                        region_breaks = c(-15),
+                        region_labels = c("NORTH", "SOUTH"))
+basin
+g <- basin$geometry; g$Region <- basin$cells$Region
+ggplot(g) + geom_sf(aes(fill = Region), colour = "white", linewidth = 0.05) +
+    scale_fill_grey(start = 0.3, end = 0.7) + theme_pub()
+```
+
+`geodesic_area_km2()` gives the area of any polygon in geographic
+coordinates:
+
+```{r}
+cell <- sf::st_sfc(sf::st_polygon(list(cbind(c(0, 1, 1, 0, 0),
+                                             c(0, 0, 1, 1, 0)))), crs = 4326)
+geodesic_area_km2(cell)
+```
+
+## Using a domain
+
+By default `simulate_biomass()` builds the domain described in
+`cfg$spatial` (the bundled grid and the BET-A area for the `BET_ICCAT`
+preset). Any other domain can be passed explicitly. Its regions then take
+precedence over the ones in the configuration:
+
+```{r, eval = FALSE}
+sim <- simulate_biomass(om_biomass_config("BET_ICCAT"), domain = dom_alb)
+```
+
+See [Tuning the operating model](tuning.html) for complete examples with other stock areas.

@@ -1,7 +1,7 @@
 Package: pelagicOM
 Type: Package
 Title: Spatio-Temporal Operating Model for Pelagic Stocks and Longline Fisheries
-Version: 0.1.1
+Version: 0.1.2
 Date: 2026-11-22
 Authors@R:
     person("Rodrigo", "Sant'Ana", role = c("aut", "cre"),
@@ -19,7 +19,8 @@ Description: Simulates a completely known operating truth for testing CPUE
     area. The 'BET_ICCAT' preset reproduces exactly the bigeye tuna operating
     model of Experimento 02 (workshop tRFMO CPUE, 2026).
 License: GPL-3
-URL: https://github.com/rodrigosantana/pelagicOM
+URL: https://rodrigosantana.github.io/pelagicOM/,
+    https://github.com/rodrigosantana/pelagicOM
 BugReports: https://github.com/rodrigosantana/pelagicOM/issues
 Encoding: UTF-8
 Language: en-GB
@@ -39,5 +40,6 @@ Suggests:
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
 Config/testthat/edition: 3
+Config/Needs/website: pkgdown, ragg
 Roxygen: list(markdown = TRUE)
 Config/roxygen2/version: 8.1.1

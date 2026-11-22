@@ -45,6 +45,7 @@ against the reference files of Experimento 02.
 \seealso{
 Useful links:
 \itemize{
+  \item \url{https://rodrigosantana.github.io/pelagicOM/}
   \item \url{https://github.com/rodrigosantana/pelagicOM}
   \item Report bugs at \url{https://github.com/rodrigosantana/pelagicOM/issues}
 }

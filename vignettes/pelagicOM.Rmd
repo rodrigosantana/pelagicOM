@@ -188,3 +188,16 @@ truth and the eight scenario data sets with the reference files and reports
 whether each one is `identical()`. The script
 `system.file("scripts", "reproduce_experimento02.R", package = "pelagicOM")`
 runs the whole proof from the command line.
+
+## Where to go next
+
+The website articles describe each part of the model in detail:
+
+* [Spatial domain](https://rodrigosantana.github.io/pelagicOM/articles/spatial-domain.html):
+  ICCAT grid, stock areas, regions, GeoPackages, synthetic grids.
+* [Part I: biomass](https://rodrigosantana.github.io/pelagicOM/articles/biomass.html)
+  and [Part II: fishery](https://rodrigosantana.github.io/pelagicOM/articles/fishery.html).
+* [Observation and scenarios](https://rodrigosantana.github.io/pelagicOM/articles/observation-scenarios.html).
+* [Tuning](https://rodrigosantana.github.io/pelagicOM/articles/tuning.html),
+  [outputs](https://rodrigosantana.github.io/pelagicOM/articles/outputs.html)
+  and the [configuration reference](https://rodrigosantana.github.io/pelagicOM/articles/configuration-reference.html).
