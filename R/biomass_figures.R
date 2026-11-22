@@ -135,7 +135,8 @@ fig_maps <- function(sim, years_sel = NULL) {
         g
     }))
     L$panel <- factor(L$panel, levels = unique(L$panel))
-    br <- domain_regions(sim$dom, cfg)$breaks
+    br <- breaks_in_domain(domain_regions(sim$dom, cfg)$breaks,
+                           sim$dom$cells)
     ggplot2::ggplot(L) +
         ggplot2::geom_sf(ggplot2::aes(fill = Density), colour = NA) +
         ggplot2::scale_fill_gradient(low = "grey97", high = "black",
@@ -148,8 +149,10 @@ fig_maps <- function(sim, years_sel = NULL) {
         ggplot2::labs(x = NULL, y = NULL,
                       title = "True biomass density in selected years",
                       subtitle = if (length(br))
-                          paste("Dashed lines:", collapse_and(fmt_lat(br)),
-                                "region boundaries")) +
+                          paste(if (length(br) > 1) "Dashed lines:" else
+                                    "Dashed line:", collapse_and(fmt_lat(br)),
+                                if (length(br) > 1) "region boundaries" else
+                                    "region boundary")) +
         theme_pub(base = 10) +
         ggplot2::theme(legend.position = "right",
                        legend.title = ggplot2::element_text(size = 9),
@@ -194,7 +197,8 @@ fig_centre_gravity <- function(sim, cg = centre_of_gravity(sim)) {
 #' @param prof Output of [latitude_profile()].
 #' @export
 fig_hovmoller <- function(sim, prof = latitude_profile(sim)) {
-    br <- domain_regions(sim$dom, sim$cfg)$breaks
+    br <- breaks_in_domain(domain_regions(sim$dom, sim$cfg)$breaks,
+                           sim$dom$cells)
     ggplot2::ggplot(prof, ggplot2::aes(Year, Lat_band, fill = Density)) +
         ggplot2::geom_raster() +
         ggplot2::scale_fill_gradient(low = "grey97", high = "black",
@@ -268,7 +272,9 @@ fig_envelope_profiles <- function(sim, years_sel = NULL) {
     ltys <- rep(c("solid", "22", "42", "12"), length.out = length(years_sel))
     ggplot2::ggplot(d, ggplot2::aes(Latitude, value, colour = Year,
                                     linetype = Year)) +
-        ggplot2::geom_vline(xintercept = domain_regions(sim$dom, cfg)$breaks,
+        ggplot2::geom_vline(xintercept = breaks_in_domain(
+                                domain_regions(sim$dom, cfg)$breaks,
+                                sim$dom$cells),
                             linetype = "22", colour = GRAY_LIGHT) +
         ggplot2::geom_line(linewidth = 0.8) +
         ggplot2::scale_colour_manual(values = grays) +

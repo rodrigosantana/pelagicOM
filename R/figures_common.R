@@ -65,6 +65,13 @@ fmt_lat <- function(x) {
 }
 
 ######@> "a", "a and b", "a, b and c"...
+######@> Region boundaries that cross the domain (a southern stock area,
+######@> for example, is not crossed by 20N)...
+breaks_in_domain <- function(breaks, cells) {
+    lo <- min(cells$Nominal_lat0); hi <- max(cells$Nominal_lat0) + 1
+    breaks[breaks > lo & breaks < hi]
+}
+
 collapse_and <- function(x) {
     n <- length(x)
     if (n <= 1) return(paste(x, collapse = ""))

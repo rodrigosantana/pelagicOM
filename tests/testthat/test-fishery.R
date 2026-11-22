@@ -72,3 +72,24 @@ test_that("fishery runs on a domain with custom regions and fleets", {
     expect_identical(names(scen$datasets), c("all", "south"))
     expect_true(all(scen$datasets$south$Region == "S"))
 })
+
+test_that("a region without cells needs no region effect (southern stock)", {
+    ## default regions on a domain south of 5N: R01 has no cells
+    dom <- om_domain_grid(lon = c(-40, -10), lat = c(-35, 5),
+                          geometry = FALSE, verbose = FALSE)
+    expect_false("R01" %in% as.character(dom$cells$Region))
+    sim <- simulate_biomass(small_biomass_cfg(), dom, long_table = FALSE,
+                            verbose = FALSE)
+    fcfg <- small_fishery_cfg()
+    fcfg$fleets$N$regions <- "R02"
+    fcfg$catchability$region_effect <- c(R02 = 0, R03 = 0)
+    fcfg$scenarios <- list(
+        list(name = "all", regions = c("R02", "R03"), drop = character(0),
+             observation = "complete", objective = "all"))
+    fish <- simulate_fishery(sim, fcfg, verbose = FALSE)
+    expect_setequal(unique(fish$data$Region), c("R02", "R03"))
+    ## a region with cells still needs an effect
+    fcfg$catchability$region_effect <- c(R02 = 0)
+    expect_error(simulate_fishery(sim, fcfg, verbose = FALSE),
+                 "no entry for region\\(s\\): R03")
+})

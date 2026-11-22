@@ -71,3 +71,13 @@ test_that("om_fleet builds a valid fleet and missing HBF multipliers are filled"
     v <- validate_fishery_config(f)
     expect_equal(unname(v$catchability$hbf$by_fleet["F"]), 1)
 })
+
+test_that("fishery map years must lie within the simulated period", {
+    expect_error(om_fishery_config("BET_ICCAT",
+                                   temporal = list(year_start = 1971)),
+                 "map_years")
+    cfg <- om_fishery_config("BET_ICCAT",
+                             temporal = list(year_start = 1950),
+                             output = list(map_years = c(1960, 2025)))
+    expect_identical(cfg$output$map_years, c(1960, 2025))
+})

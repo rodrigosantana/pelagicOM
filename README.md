@@ -68,7 +68,8 @@ every component of the model and the tuning options, including a complete
 alternative operating model for BET (same three regions, fleets and
 scenarios as Experimento 02, with other productivity, a northward
 redistribution and a stronger creep), the configuration reference and the
-data dictionary.
+data dictionary. A case-study article builds a mimic of the South Atlantic
+blue shark (BSH-S) with the same functions.
 
 ## Proof of reproduction
 

@@ -76,7 +76,8 @@ fig_effort_maps <- function(fishery, years_sel = NULL) {
         ggplot2::scale_fill_gradient(low = "grey85", high = "black",
                                      transform = "sqrt", na.value = "grey97",
                                      name = "Sets per cell") +
-        ggplot2::geom_hline(yintercept = truth$regions$breaks,
+        ggplot2::geom_hline(yintercept = breaks_in_domain(truth$regions$breaks,
+                                                          truth$cells),
                             linetype = "22", colour = GRAY_MID,
                             linewidth = 0.3) +
         ggplot2::facet_wrap(~panel, ncol = 2) +

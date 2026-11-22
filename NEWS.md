@@ -1,3 +1,18 @@
+# pelagicOM 0.1.3 (2026-11-22)
+
+* New article "A mimic of the South Atlantic blue shark" (case studies): an
+  operating model shaped after BSH-S as assessed by ICCAT in 2023 (area south
+  of 5°N, JABBA reference-case production parameters, removals following
+  the ICCAT catches, nursery and adult areas, five longline fleet archetypes,
+  index-like series), built with configuration only.
+* `simulate_fishery()` no longer asks for a `catchability$region_effect` of
+  a region without cells (e.g. R01 in a southern stock area).
+* `om_fishery_config()` / `validate_fishery_config()` stop when
+  `output$map_years` lie outside the simulated period (the effort maps had
+  empty panels).
+* Map figures draw only the region boundaries that cross the domain.
+* The reproduction of Experimento 02 is unchanged (19 of 19 identical).
+
 # pelagicOM 0.1.2 (2026-11-22)
 
 * Package website (pkgdown) at <https://rodrigosantana.github.io/pelagicOM/>,

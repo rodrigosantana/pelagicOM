@@ -45,6 +45,11 @@ articles:
       - articles/outputs
       - articles/configuration-reference
       - articles/reproduce-experimento02
+  - title: Case studies
+    navbar: Case studies
+    desc: Operating models shaped after real stocks.
+    contents:
+      - articles/mimic-bsh-south
 
 reference:
   - title: Complete runs

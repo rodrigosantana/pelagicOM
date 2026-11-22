@@ -1,7 +1,7 @@
 Package: pelagicOM
 Type: Package
 Title: Spatio-Temporal Operating Model for Pelagic Stocks and Longline Fisheries
-Version: 0.1.2
+Version: 0.1.3
 Date: 2026-11-22
 Authors@R:
     person("Rodrigo", "Sant'Ana", role = c("aut", "cre"),

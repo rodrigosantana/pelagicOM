@@ -373,6 +373,10 @@ validate_fishery_config <- function(cfg) {
     stopifnot(tp$year_end > tp$year_start,
               identical(as.integer(tp$quarters), 1:4),
               tp$biomass_within_year == "constant")
+    my <- cfg$output$map_years
+    if (length(my) && any(my < tp$year_start | my > tp$year_end))
+        stop("output$map_years (", paste(my, collapse = ", "),
+             ") must lie within ", tp$year_start, "-", tp$year_end)
     fl <- names(cfg$fleets)
     if (!length(fl) || anyDuplicated(fl) || any(!nzchar(fl)))
         stop("fleets must be a non-empty list with unique names")
@@ -464,7 +468,10 @@ check_fishery_vs_truth <- function(cfg, truth) {
                  "domain: ", paste(r, collapse = ", "), " (domain regions: ",
                  paste(labs, collapse = ", "), ")")
     }
-    miss <- setdiff(labs, names(cfg$catchability$region_effect))
+    ## a region effect is needed only for regions with cells (e.g. R01 has
+    ## no cells in a southern stock area)
+    present <- intersect(labs, unique(as.character(truth$cells$Region)))
+    miss <- setdiff(present, names(cfg$catchability$region_effect))
     if (length(miss))
         stop("catchability$region_effect has no entry for region(s): ",
              paste(miss, collapse = ", "))
