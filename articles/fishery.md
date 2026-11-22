@@ -84,10 +84,8 @@ knitr::kable(fish$fleets)
 | D | 40 | 1962 | 2025 | R02+R03 | -30 | -8 | 20 | -0.10 | 1.0 |
 | E | 30 | 1968 | 2025 | R02+R03 | 0 | -18 | 18 | -0.25 | 0.9 |
 
-New fleets are created with
-[`om_fleet()`](https://rodrigosantana.github.io/pelagicOM/reference/om_fleet.md)
-(see
-[Tuning](https://rodrigosantana.github.io/pelagicOM/articles/tuning.md)).
+New fleets can be created with
+[`om_fleet()`](https://rodrigosantana.github.io/pelagicOM/reference/om_fleet.md).
 
 ## 2. Vessels, trips and sets
 

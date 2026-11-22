@@ -70,11 +70,6 @@ dom_gpkg <- om_domain_from_gpkg("Experimento_02/ICCAT/ICCAT_gis.gpkg")
 
 # user-defined habitat layers (log scale, one value per cell)
 bcfg$habitat$custom_effect <- function(cells) 1.5 * (cells$Area_frac < 1)
-
-# any fleets
-fcfg <- om_fishery_config("BET_ICCAT")
-fcfg$fleets$F <- om_fleet(n_vessels = 20, year_start = 1990,
-                          regions = "R02", core_lon = -10, core_lat = 0)
 ```
 
 The [articles](https://rodrigosantana.github.io/pelagicOM/articles/)
