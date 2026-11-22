@@ -50,7 +50,7 @@ Each fleet has:
 knitr::kable(fish$fleets)
 ```
 
-New fleets are created with `om_fleet()` (see [Tuning](tuning.html)).
+New fleets can be created with [`om_fleet()`](../reference/om_fleet.html).
 
 ## 2. Vessels, trips and sets
 

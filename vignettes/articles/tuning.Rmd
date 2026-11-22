@@ -120,12 +120,6 @@ fig_base_habitat(s)
 ```{r, eval = FALSE}
 fcfg <- om_fishery_config("BET_ICCAT")
 
-## fleets: remove, resize, create
-fcfg <- om_config_update(fcfg, fleets = list(E = NULL, A = list(n_vessels = 60)))
-fcfg$fleets$F <- om_fleet(n_vessels = 25, year_start = 1985, regions = "R02",
-                          core_lon = -10, core_lat = 0, q_effect = 0.2,
-                          strategy_comp = c(S1 = 0.7, S2 = 0.2, S3 = 0.1))
-
 ## catchability: no creep, stronger HBF effect, no preferential sampling
 fcfg <- om_config_update(fcfg,
     catchability = list(creep_enabled = FALSE, hbf = list(effect = 2)),

@@ -15,8 +15,8 @@
   warning of `kmeans()`; its results do not change.
 * All examples (README, vignette, articles, help pages) are based on BET
   and keep the structure of Experimento 02: the BET-A area with its three
-  regions (R01, R02, R03), the five fleets A-E and the eight scenarios. The
-  complete tuning example is an alternative BET operating model that changes
+  regions (R01, R02, R03), the five fleets A-E and the eight scenarios; no
+  example removes or adds fleets. The complete tuning example is an alternative BET operating model that changes
   only parameter values (productivity, northward redistribution, creep).
 * The map of ICCAT stock areas (article "Spatial domain") now draws one panel
   per species, with each stock area labelled on the map. In the old
