@@ -22,7 +22,7 @@ How each component of the simulation works.
 
 Tuning, outputs, every parameter and the proof of reproduction.
 
-- [Tuning the operating model: other species, distributions and
+- [Tuning the operating model: hypotheses, distributions and
   fleets](https://rodrigosantana.github.io/pelagicOM/articles/tuning.md):
 - [Outputs, files and data
   dictionary](https://rodrigosantana.github.io/pelagicOM/articles/outputs.md):

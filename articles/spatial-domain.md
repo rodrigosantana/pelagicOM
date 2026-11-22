@@ -116,25 +116,46 @@ knitr::kable(iccat_stocks()[, c("stock_code", "name", "n_cells")])
 | MD         | MD                                     |     431 |
 | ICCAT      | ICCAT convention area                  |   10051 |
 
+BET is a single Atlantic stock (BET-A, all cells). Other species are
+split into stock areas. The map below draws one panel per species, with
+each stock area in its own tone and its code written over it:
+
 ``` r
 
-show_stocks <- function(codes) {
+stock_cells <- function(codes) {
     g <- iccat_geometry()
     do.call(rbind, lapply(codes, function(cd) {
-        d <- om_domain_iccat(cd, geometry = FALSE, verbose = FALSE)
-        x <- g[g$Cell_ID %in% d$cells$Cell_ID, ]
+        x <- g[g$Cell_ID %in% om_domain_iccat(cd, geometry = FALSE,
+                                              verbose = FALSE)$cells$Cell_ID, ]
         x$stock <- cd
+        x$species <- sub("-.*$", "", cd)
         x
     }))
 }
-m <- show_stocks(c("ALB-N", "ALB-S", "ALB-M", "SKJ-E", "SKJ-W", "BFT-W"))
+codes <- c("BET-A", "SKJ-W", "SKJ-E", "BFT-W", "BFT-E",
+           "ALB-N", "ALB-S", "ALB-M", "SWO-N", "SWO-S", "SWO-M")
+m <- stock_cells(codes)
+m$species <- factor(m$species, levels = c("BET", "SKJ", "BFT", "ALB", "SWO"))
+## tones by position of the stock within its species
+pos <- ave(seq_along(codes), sub("-.*$", "", codes), FUN = seq_along)
+tones <- setNames(c("grey35", "grey65", "grey85")[pos], codes)
+lab <- do.call(rbind, lapply(codes, function(cd) {
+    cl <- m[m$stock == cd, ]
+    i <- om_domain_iccat(cd, geometry = FALSE, verbose = FALSE)$cells
+    data.frame(stock = cd, species = cl$species[1],
+               lon = median(i$Longitude), lat = median(i$Latitude))
+}))
 ggplot(m) +
-    geom_sf(fill = "grey30", colour = NA) +
-    facet_wrap(~stock, ncol = 3) +
+    geom_sf(aes(fill = stock), colour = NA) +
+    geom_label(data = lab, aes(lon, lat, label = stock), size = 3,
+               linewidth = 0, fill = "white", alpha = 0.85) +
+    scale_fill_manual(values = tones, guide = "none") +
+    facet_wrap(~species, ncol = 3) +
     coord_sf(expand = FALSE) +
-    labs(title = "Cells of some ICCAT stock areas") +
+    labs(x = NULL, y = NULL, title = "Stock areas of the bundled ICCAT grid") +
     theme_pub(base = 9) +
-    theme(panel.grid.major = element_blank())
+    theme(panel.grid.major = element_blank(),
+          panel.border = element_rect(colour = "grey60", fill = NA))
 ```
 
 ![](spatial-domain_files/figure-html/unnamed-chunk-5-1.png)
@@ -157,26 +178,28 @@ table(dom$cells$Region)
 #> 4519 2368 3164
 ```
 
-Any number of bands can be used. Regions without cells in a domain are
-dropped with a message:
+Any number of bands can be used. For example, the BET-A area can be
+split at the equator into four regions. Regions without cells in a
+domain are dropped with a message.
 
 ``` r
 
-dom_alb <- om_domain_iccat("ALB-N", region_breaks = c(25, 40),
-                           region_labels = c("NORTH", "CENTRAL", "SOUTH"))
-#>   domain ALB-N: 5070 cells | lattice 65 x 129
-table(dom_alb$cells$Region)
+dom4 <- om_domain_iccat("BET-A", region_breaks = c(-20, 0, 20),
+                        region_labels = c("NORTH", "TROP_N", "TROP_S", "SOUTH"))
+#>   domain BET-A: 10051 cells | lattice 130 x 140
+table(dom4$cells$Region)
 #> 
-#>   NORTH CENTRAL   SOUTH 
-#>    2523    1155    1392
-g <- dom_alb$geometry
-g$Region <- dom_alb$cells$Region
+#>  NORTH TROP_N TROP_S  SOUTH 
+#>   4519   1307   1061   3164
+g <- dom4$geometry
+g$Region <- dom4$cells$Region
 ggplot(g) +
     geom_sf(aes(fill = Region), colour = NA) +
-    scale_fill_grey(start = 0.25, end = 0.8) +
+    scale_fill_grey(start = 0.2, end = 0.85) +
     coord_sf(expand = FALSE) +
-    labs(title = "ALB-N with three regions") +
-    theme_pub() + theme(panel.grid.major = element_blank())
+    labs(title = "BET-A with four regions") +
+    theme_pub() + theme(panel.grid.major = element_blank(),
+                        legend.position = "right")
 ```
 
 ![](spatial-domain_files/figure-html/unnamed-chunk-7-1.png)
@@ -203,13 +226,11 @@ Experimento 02 exactly (this is checked by the package tests).
 ``` r
 
 gpkg <- "Experimento_02/ICCAT/ICCAT_gis.gpkg"
-inspect_geopackage(gpkg, layers = "albacore_tuna_stock_areas")
+inspect_geopackage(gpkg, layers = "bigeye_tuna_stock_areas")
 
-dom_bet <- om_domain_from_gpkg(gpkg)                      # BET-A, Exp. 02
-dom_alb <- om_domain_from_gpkg(gpkg,
-                               layer_stock = "albacore_tuna_stock_areas",
-                               stock_code = "ALB-S",
-                               selection = "point_on_surface")
+dom_bet <- om_domain_from_gpkg(gpkg)          # BET-A: the domain of Exp. 02
+identical(dom_bet$cells, om_domain_iccat()$cells)
+#> [1] TRUE
 ```
 
 The `selection` argument chooses the rule:
@@ -223,6 +244,9 @@ The `selection` argument chooses the rule:
   of
   [`om_domain_iccat()`](https://rodrigosantana.github.io/pelagicOM/reference/om_domain_iccat.md).
 
+For BET-A, which covers the whole Convention area, both rules keep the
+same 10,051 cells.
+
 A simulation can also read the GeoPackage itself, through
 `spatial$source = "gpkg"` in the biomass configuration:
 
@@ -235,27 +259,28 @@ sim <- simulate_biomass(cfg)    # identical to the bundled-grid run
 
 ## Synthetic grids
 
-For teaching, tests or other oceans,
 [`om_domain_grid()`](https://rodrigosantana.github.io/pelagicOM/reference/om_domain_grid.md)
-builds a rectangular 1x1 grid. `exclude` removes cells (for example
-land) through a function of the cell centres. Areas are geodesic on the
-WGS84 ellipsoid, computed exactly as for the ICCAT grid.
+builds a rectangular 1x1 grid. With it, the BET operating model can run
+on an idealised Atlantic, without coastline, for teaching, tests or to
+isolate the effect of the coast. `exclude` removes cells through a
+function of the cell centres; here it removes a block of “land” in the
+north-east. Areas are geodesic on the WGS84 ellipsoid, computed exactly
+as for the ICCAT grid.
 
 ``` r
 
-basin <- om_domain_grid(lon = c(40, 100), lat = c(-40, 20),
-                        exclude = function(lon, lat) lat > 10 & lon < 60,
-                        region_breaks = c(-15),
-                        region_labels = c("NORTH", "SOUTH"))
-#>   synthetic domain: 3400 cells | lattice 60 x 60
-basin
+box <- om_domain_grid(lon = c(-60, 15), lat = c(-45, 45),
+                      exclude = function(lon, lat) lon > 0 & lat > 10)
+#>   synthetic domain: 6225 cells | lattice 90 x 75
+box
 #> <pelagicOM spatial domain> GRID (grid)
-#>   3400 cells | lattice 60 x 60 | lon 40.5 to 99.5 | lat -39.5 to 19.5
-#>   regions: NORTH = 1900, SOUTH = 1500 
-#>   total area: 39,354,032 km2 | geometry: yes
-g <- basin$geometry; g$Region <- basin$cells$Region
+#>   6225 cells | lattice 90 x 75 | lon -59.5 to 14.5 | lat -44.5 to 44.5
+#>   regions: R01 = 1500, R02 = 2850, R03 = 1875 
+#>   total area: 69,312,346 km2 | geometry: yes
+g <- box$geometry; g$Region <- box$cells$Region
 ggplot(g) + geom_sf(aes(fill = Region), colour = "white", linewidth = 0.05) +
-    scale_fill_grey(start = 0.3, end = 0.7) + theme_pub()
+    scale_fill_grey(start = 0.3, end = 0.8) +
+    labs(title = "Idealised Atlantic box for BET") + theme_pub()
 ```
 
 ![](spatial-domain_files/figure-html/unnamed-chunk-10-1.png)
@@ -282,7 +307,7 @@ configuration:
 
 ``` r
 
-sim <- simulate_biomass(om_biomass_config("BET_ICCAT"), domain = dom_alb)
+sim <- simulate_biomass(om_biomass_config("BET_ICCAT"), domain = dom4)
 ```
 
 See [Tuning the operating

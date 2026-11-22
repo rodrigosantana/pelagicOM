@@ -348,7 +348,7 @@ runs two groups of checks:
 ``` r
 
 chk <- check_simulation(sim)
-#>   identities: max|sum p - 1| = 1.11e-16 | max rel |sum B - B_total| = 1.69e-16
+#>   identities: max|sum p - 1| = 1.11e-16 | max rel |sum B - B_total| = 1.41e-16
 #>   mean density in the first year (t/km2): R01=0.0010  R02=0.0328  R03=0.0011
 #>   share (mean of the first vs last 10 years): R01 0.039 -> 0.144 | R02 0.928 -> 0.716 | R03 0.033 -> 0.140
 #>   redistribution active: TRUE

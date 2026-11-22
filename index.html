@@ -52,7 +52,7 @@
     <li><a class="dropdown-item" href="articles/observation-scenarios.html">Observation process and scenario data sets</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Using the package</h6></li>
-    <li><a class="dropdown-item" href="articles/tuning.html">Tuning the operating model: other species, distributions and fleets</a></li>
+    <li><a class="dropdown-item" href="articles/tuning.html">Tuning the operating model: hypotheses, distributions and fleets</a></li>
     <li><a class="dropdown-item" href="articles/outputs.html">Outputs, files and data dictionary</a></li>
     <li><a class="dropdown-item" href="articles/configuration-reference.html">Configuration reference: every parameter</a></li>
     <li><a class="dropdown-item" href="articles/reproduce-experimento02.html">Proof of reproduction of Experimento 02</a></li>
@@ -149,25 +149,20 @@
 <span>                          population <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>r <span class="op">=</span> <span class="fl">0.45</span><span class="op">)</span>,</span>
 <span>                          shift <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>center_drift <span class="op">=</span> <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># any ICCAT stock area (24 areas bundled), any latitudinal regions,</span></span>
-<span><span class="co"># or read a GeoPackage directly (geodesic areas by lwgeom)</span></span>
-<span><span class="fu"><a href="reference/iccat_stocks.html">iccat_stocks</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">dom</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/om_domain_iccat.html">om_domain_iccat</a></span><span class="op">(</span><span class="st">"ALB-N"</span>, region_breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">25</span>, <span class="fl">40</span><span class="op">)</span>,</span>
-<span>                       region_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NORTH"</span>, <span class="st">"CENTRAL"</span>, <span class="st">"SOUTH"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">dom2</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/om_domain_from_gpkg.html">om_domain_from_gpkg</a></span><span class="op">(</span><span class="st">"Experimento_02/ICCAT/ICCAT_gis.gpkg"</span>,</span>
-<span>                            layer_stock <span class="op">=</span> <span class="st">"albacore_tuna_stock_areas"</span>,</span>
-<span>                            stock_code <span class="op">=</span> <span class="st">"ALB-N"</span>,</span>
-<span>                            selection <span class="op">=</span> <span class="st">"point_on_surface"</span><span class="op">)</span></span>
+<span><span class="co"># any latitudinal regions (BET-A split at the equator into four regions),</span></span>
+<span><span class="co"># or the domain read directly from the GeoPackage (geodesic areas by lwgeom)</span></span>
+<span><span class="va">dom4</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/om_domain_iccat.html">om_domain_iccat</a></span><span class="op">(</span><span class="st">"BET-A"</span>, region_breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">20</span>, <span class="fl">0</span>, <span class="fl">20</span><span class="op">)</span>,</span>
+<span>                        region_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NORTH"</span>, <span class="st">"TROP_N"</span>, <span class="st">"TROP_S"</span>, <span class="st">"SOUTH"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">dom_gpkg</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/om_domain_from_gpkg.html">om_domain_from_gpkg</a></span><span class="op">(</span><span class="st">"Experimento_02/ICCAT/ICCAT_gis.gpkg"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># temperate species: envelope on |latitude|; user-defined habitat layers</span></span>
-<span><span class="va">bcfg</span><span class="op">$</span><span class="va">habitat</span><span class="op">$</span><span class="va">envelope_type</span> <span class="op">&lt;-</span> <span class="st">"abs_latitude"</span></span>
-<span><span class="va">bcfg</span><span class="op">$</span><span class="va">habitat</span><span class="op">$</span><span class="va">custom_effect</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">cells</span><span class="op">)</span> <span class="fl">0.01</span> <span class="op">*</span> <span class="va">cells</span><span class="op">$</span><span class="va">Longitude</span></span>
+<span><span class="co"># user-defined habitat layers (log scale, one value per cell)</span></span>
+<span><span class="va">bcfg</span><span class="op">$</span><span class="va">habitat</span><span class="op">$</span><span class="va">custom_effect</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">cells</span><span class="op">)</span> <span class="fl">1.5</span> <span class="op">*</span> <span class="op">(</span><span class="va">cells</span><span class="op">$</span><span class="va">Area_frac</span> <span class="op">&lt;</span> <span class="fl">1</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># any fleets</span></span>
 <span><span class="va">fcfg</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/om_fishery_config.html">om_fishery_config</a></span><span class="op">(</span><span class="st">"BET_ICCAT"</span><span class="op">)</span></span>
 <span><span class="va">fcfg</span><span class="op">$</span><span class="va">fleets</span><span class="op">$</span><span class="cn">F</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/om_fleet.html">om_fleet</a></span><span class="op">(</span>n_vessels <span class="op">=</span> <span class="fl">20</span>, year_start <span class="op">=</span> <span class="fl">1990</span>,</span>
 <span>                          regions <span class="op">=</span> <span class="st">"R02"</span>, core_lon <span class="op">=</span> <span class="op">-</span><span class="fl">10</span>, core_lat <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></code></pre></div>
-<p>The <a href="https://rodrigosantana.github.io/pelagicOM/articles/">articles</a> cover every component of the model and the tuning options, including a complete example with a temperate tuna in the ALB-N area, the configuration reference and the data dictionary.</p>
+<p>The <a href="https://rodrigosantana.github.io/pelagicOM/articles/">articles</a> cover every component of the model and the tuning options, including a complete alternative operating model for BET (four regions, northward redistribution, new fleet), the configuration reference and the data dictionary.</p>
 </div>
 <div class="section level2">
 <h2 id="proof-of-reproduction">Proof of reproduction<a class="anchor" aria-label="anchor" href="#proof-of-reproduction"></a>
@@ -208,7 +203,7 @@
 </h2>
 <p>O <code>pelagicOM</code> empacota as componentes de simulação do Experimento 02: biomassa espaço-temporal (Parte I), dados pesqueiros de espinhel lance a lance (Parte II), processo de observação e cenários. O preset <code>BET_ICCAT</code> reproduz exatamente os resultados do experimento para o BET, e o script <code>inst/scripts/reproduce_experimento02.R</code> faz essa prova.</p>
 <p>As áreas das células são geodésicas (elipsoide WGS84) e calculadas pelo <code>lwgeom</code> (<code><a href="reference/geodesic_area_km2.html">geodesic_area_km2()</a></code>), como no experimento. A grade ICCAT embutida é gerada do GeoPackage pelo próprio pacote (<code><a href="reference/om_domain_from_gpkg.html">om_domain_from_gpkg()</a></code>) e conferida contra o domínio salvo do Experimento 02.</p>
-<p>Todos os parâmetros podem ser ajustados com <code><a href="reference/om_config_update.html">om_config_update()</a></code>. A área pode ser qualquer estoque da ICCAT (<code><a href="reference/om_domain_iccat.html">om_domain_iccat()</a></code>), as regiões podem ser faixas de latitude livres, o envelope pode ser tropical (<code>"latitude"</code>) ou temperado (<code>"abs_latitude"</code>), e frotas, espécies-alvo e acompanhantes também são configuráveis. A metodologia completa está em <code>Experimento_02/Simulacao_Biomassa/METODOLOGIA.md</code> e <code>Experimento_02/Simulacao_Pesca/RELATORIO_METODOLOGICO.md</code>.</p>
+<p>Todos os parâmetros podem ser ajustados com <code><a href="reference/om_config_update.html">om_config_update()</a></code>. A área pode ser qualquer estoque da ICCAT (<code><a href="reference/om_domain_iccat.html">om_domain_iccat()</a></code>), as regiões podem ser faixas de latitude livres, o envelope pode ser tropical (<code>"latitude"</code>) ou temperado (<code>"abs_latitude"</code>), e frotas, espécies-alvo e acompanhantes também são configuráveis. Todos os exemplos da documentação usam a BET. A metodologia completa está em <code>Experimento_02/Simulacao_Biomassa/METODOLOGIA.md</code> e <code>Experimento_02/Simulacao_Pesca/RELATORIO_METODOLOGICO.md</code>.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">

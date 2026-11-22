@@ -33,7 +33,7 @@
     <li><a class="dropdown-item" href="../articles/observation-scenarios.html">Observation process and scenario data sets</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Using the package</h6></li>
-    <li><a class="dropdown-item" href="../articles/tuning.html">Tuning the operating model: other species, distributions and fleets</a></li>
+    <li><a class="dropdown-item" href="../articles/tuning.html">Tuning the operating model: hypotheses, distributions and fleets</a></li>
     <li><a class="dropdown-item" href="../articles/outputs.html">Outputs, files and data dictionary</a></li>
     <li><a class="dropdown-item" href="../articles/configuration-reference.html">Configuration reference: every parameter</a></li>
     <li><a class="dropdown-item" href="../articles/reproduce-experimento02.html">Proof of reproduction of Experimento 02</a></li>
@@ -100,13 +100,15 @@ centre (<code>"latitude"</code>) or in the northern / southern hemisphere
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">lat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="op">-</span><span class="fl">60</span>, <span class="fl">60</span>, <span class="fl">10</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co">## BET envelope in 1950 (sd 11) and in 2025 (sd 11 x 1.7, poleward</span></span></span>
+<span class="r-in"><span><span class="co">## expansion of Experimento 02)</span></span></span>
+<span class="r-in"><span><span class="va">lat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="op">-</span><span class="fl">60</span>, <span class="fl">60</span>, <span class="fl">10</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="fu">latitudinal_envelope</span><span class="op">(</span><span class="va">lat</span>, <span class="fl">0</span>, <span class="fl">11</span>, <span class="fl">11</span><span class="op">)</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [1] 0.000 0.000 0.001 0.024 0.191 0.662 1.000 0.662 0.191 0.024 0.001 0.000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [13] 0.000</span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="fu">latitudinal_envelope</span><span class="op">(</span><span class="va">lat</span>, <span class="fl">30</span>, <span class="fl">8</span>, <span class="fl">10</span>, <span class="st">"abs_latitude"</span><span class="op">)</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] 0.011 0.135 0.607 1.000 0.607 0.135 0.001 0.044 0.458 1.000 0.458 0.044</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13] 0.001</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="fu">latitudinal_envelope</span><span class="op">(</span><span class="va">lat</span>, <span class="fl">0</span>, <span class="fl">18.7</span>, <span class="fl">18.7</span><span class="op">)</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] 0.006 0.028 0.101 0.276 0.564 0.867 1.000 0.867 0.564 0.276 0.101 0.028</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13] 0.006</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

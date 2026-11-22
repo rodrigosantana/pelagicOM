@@ -1,4 +1,4 @@
-# Tuning the operating model: other species, distributions and fleets
+# Tuning the operating model: hypotheses, distributions and fleets
 
 ``` r
 
@@ -161,140 +161,163 @@ fcfg$catch_process$distribution <- "delta_lognormal"
 fcfg$reproducibility$seeds$catch <- 1
 ```
 
-## Complete example: a temperate tuna in the North Atlantic
+## Complete example: an alternative operating model for BET
 
-This example puts together several of the changes above:
+This example puts together several of the changes above into an
+alternative hypothesis for BET. In this hypothesis:
 
-- the ALB-N stock area with three regions;
-- an envelope on the absolute latitude with a preferred latitude of 32
-  degrees, drifting 4 degrees poleward;
-- two fleets;
-- ALB as target species, with BET and SWO as companions;
-- scenarios defined for the new regions.
+- **Productivity and exploitation:** the stock is more productive (*r* =
+  0.40) and more heavily exploited (`u_peak = 0.32`).
+- **Redistribution:** it is not symmetric. The envelope widens only to
+  the north and its centre drifts 3 degrees north (logistic ramp).
+- **Regions:** the tropical band is split at the equator, giving four
+  regions (NORTH, TROP_N, TROP_S, SOUTH).
+- **Fleets:** fleet E leaves the fishery, and a new fleet F enters in
+  1990 in the southern tropics, with a deep-set strategy and a higher
+  catchability. The creep doubles.
+- **Scenarios:** they are redefined for the new regions.
 
 ``` r
 
-dom <- om_domain_iccat("ALB-N", region_breaks = c(25, 40),
-                       region_labels = c("NORTH", "CENTRAL", "SOUTH"))
-#>   domain ALB-N: 5070 cells | lattice 65 x 129
-alb <- om_biomass_config("BET_ICCAT",
-    general    = list(label = "alb_n", seed = 2027),
-    population = list(K = 5e5, r = 0.25, B0_frac = 0.90,
-                      decline = list(start = 1960, end = 1990, u_peak = 0.20),
-                      recovery = list(start = 2000, end = 2015, u_end = 0.08)),
-    habitat    = list(envelope_type = "abs_latitude", lat_center = 32,
-                      lat_sd_north = 7, lat_sd_south = 9,
-                      hotspots = list(list(lon = -40, lat = 35, sd_lon = 12,
-                                           sd_lat = 5, amp = 0.8))),
-    shift      = list(north_expansion = 0, south_expansion = 0,
-                      center_drift = 4))
-sim_alb <- simulate_biomass(alb, dom, verbose = FALSE)
-sim_alb
-#> <pelagicOM biomass truth> label 'alb_n' | seed 2027
-#>   5070 cells x 76 years (1950-2025) | stock area ALB-N
-#>   B_total: 450,000 t (1950) -> 311,105 t (2025) | B/K 0.90 -> 0.62 | Bmsy 250,000 t
-#>   regional share: NORTH 0.07 -> 0.17 | CENTRAL 0.77 -> 0.76 | SOUTH 0.16 -> 0.07
+dom4 <- om_domain_iccat("BET-A", region_breaks = c(-20, 0, 20),
+                        region_labels = c("NORTH", "TROP_N", "TROP_S", "SOUTH"))
+#>   domain BET-A: 10051 cells | lattice 130 x 140
+alt <- om_biomass_config("BET_ICCAT",
+    general    = list(label = "bet_alt"),
+    population = list(r = 0.40, decline = list(u_peak = 0.32)),
+    shift      = list(north_expansion = 1.0, south_expansion = 0,
+                      center_drift = 3, ramp = "logistic"))
+sim_alt <- simulate_biomass(alt, dom4, verbose = FALSE)
+sim_alt
+#> <pelagicOM biomass truth> label 'bet_alt' | seed 20261005
+#>   10051 cells x 76 years (1950-2025) | stock area BET-A
+#>   B_total: 950,000 t (1950) -> 485,168 t (2025) | B/K 0.95 -> 0.49 | Bmsy 5e+05 t
+#>   regional share: NORTH 0.04 -> 0.27 | TROP_N 0.48 -> 0.44 | TROP_S 0.45 -> 0.29 | SOUTH 0.03 -> 0.01
 ```
 
 ``` r
 
-fig_maps(sim_alb)
+fig_maps(sim_alt)
 ```
 
 ![](tuning_files/figure-html/unnamed-chunk-11-1.png)
 
 ``` r
 
-fig_centre_gravity(sim_alb)
+fig_region_share(sim_alt)
 ```
 
 ![](tuning_files/figure-html/unnamed-chunk-12-1.png)
 
 ``` r
 
-fcfg_alb <- om_fishery_config("BET_ICCAT", general = list(label = "alb_n"))
-fcfg_alb$fleets <- list(
-    JPN = om_fleet(n_vessels = 20, year_start = 1955,
-                   regions = c("CENTRAL", "SOUTH"),
-                   core_lon = -45, core_lat = 30),
-    TWN = om_fleet(n_vessels = 15, year_start = 1965,
-                   regions = c("NORTH", "CENTRAL", "SOUTH"),
-                   core_lon = -35, core_lat = 38, q_effect = -0.2,
-                   strategy_comp = c(S1 = 0.2, S2 = 0.6, S3 = 0.2)))
-fcfg_alb$catchability$region_effect <- c(NORTH = 0, CENTRAL = 0, SOUTH = 0)
-fcfg_alb$species$target <- "ALB"
-fcfg_alb$species$companions <- c("BET", "SWO")
-fcfg_alb$species$params <- list(BET = fcfg_alb$species$params$YFT,
-                                SWO = fcfg_alb$species$params$SWO)
-fcfg_alb$scenarios <- list(
-    list(name = "01_all_complete", regions = c("NORTH", "CENTRAL", "SOUTH"),
+fig_centre_gravity(sim_alt)
+```
+
+![](tuning_files/figure-html/unnamed-chunk-13-1.png)
+
+The fishery follows the new regions. In the preset, fleets A-C fish
+R01+R02 and fleet D fishes R02+R03, so their `regions` are rewritten
+with the new labels:
+
+``` r
+
+fcfg_alt <- om_fishery_config("BET_ICCAT",
+    general = list(label = "bet_alt"),
+    fleets = list(
+        A = list(regions = c("NORTH", "TROP_N")),
+        B = list(regions = c("NORTH", "TROP_N")),
+        C = list(regions = c("NORTH", "TROP_N")),
+        D = list(regions = c("TROP_N", "TROP_S", "SOUTH")),
+        E = NULL),                                    # fleet E removed
+    catchability = list(creep = 0.02,
+                        region_effect = c(NORTH = 0, TROP_N = 0,
+                                          TROP_S = 0, SOUTH = 0)))
+fcfg_alt$fleets$F <- om_fleet(n_vessels = 30, year_start = 1990,
+                              regions = c("TROP_S", "SOUTH"),
+                              core_lon = -5, core_lat = -10, q_effect = 0.15,
+                              strategy_comp = c(S1 = 0.7, S2 = 0.2, S3 = 0.1))
+fcfg_alt$scenarios <- list(
+    list(name = "01_global_complete",
+         regions = c("NORTH", "TROP_N", "TROP_S", "SOUTH"),
          drop = character(0), observation = "complete",
-         objective = "reference"),
-    list(name = "02_central_temporal", regions = "CENTRAL",
+         objective = "Reference"),
+    list(name = "02_tropical_south_without_hbf", regions = "TROP_S",
+         drop = "HooksBetweenFloats", observation = "complete",
+         objective = "Area of the new fleet, without HBF"),
+    list(name = "03_north_temporal", regions = "NORTH",
          drop = character(0), observation = "temporal",
-         objective = "degraded early data"))
-fish_alb <- simulate_fishery(sim_alb, fcfg_alb, verbose = FALSE)
-fish_alb
-#> <pelagicOM fishery truth> label 'alb_n'
-#>   201,808 sets | 17,510 trips | 139 vessels | 2 fleets | 1955-2025
-#>   target catch: total 131,625 t | mean 0.652 t/set | zeros 40.3%
+         objective = "Northern region with degraded early data"))
+fish_alt <- simulate_fishery(sim_alt, fcfg_alt, verbose = FALSE)
+fish_alt
+#> <pelagicOM fishery truth> label 'bet_alt'
+#>   1,080,614 sets | 93,853 trips | 788 vessels | 5 fleets | 1950-2025
+#>   target catch: total 870,061 t | mean 0.805 t/set | zeros 38.6%
 #>   sets by fleet x region:
-#>      
-#>       CENTRAL  NORTH  SOUTH
-#>   JPN  113617      0   9244
-#>   TWN   62856  12372   3719
-generate_scenarios(fish_alb, verbose = FALSE)
-#> <pelagicOM scenario data sets> 2 data sets
-#>   01_all_complete                    201808 sets  NORTH+CENTRAL+SOUTH complete
-#>   02_central_temporal                167396 sets  CENTRAL      temporal
+#>    
+#>      NORTH  SOUTH TROP_N TROP_S
+#>   A  57991      0 238014      0
+#>   B  35113      0 228191      0
+#>   C  50164      0 155968      0
+#>   D      0   3971 117085 100859
+#>   F      0   3012      0  90246
+generate_scenarios(fish_alt, verbose = FALSE)
+#> <pelagicOM scenario data sets> 3 data sets
+#>   01_global_complete                1080614 sets  NORTH+TROP_N+TROP_S+SOUTH complete
+#>   02_tropical_south_without_hbf      191105 sets  TROP_S       complete
+#>   03_north_temporal                  140012 sets  NORTH        temporal
 ```
 
 ``` r
 
-fig_effort_maps(fish_alb)
-```
-
-![](tuning_files/figure-html/unnamed-chunk-14-1.png)
-
-``` r
-
-fig_cpue_vs_biomass(fish_alb)
+fig_effort_maps(fish_alt)
 ```
 
 ![](tuning_files/figure-html/unnamed-chunk-15-1.png)
 
-## Another ocean with a synthetic grid
+``` r
+
+fig_cpue_vs_biomass(fish_alt)
+```
+
+![](tuning_files/figure-html/unnamed-chunk-16-1.png)
+
+## BET on an idealised Atlantic
+
+A synthetic domain
+([`om_domain_grid()`](https://rodrigosantana.github.io/pelagicOM/reference/om_domain_grid.md))
+keeps the BET operating model but removes the coastline. It is useful to
+separate the effects of the coast and of the clipped cells from the rest
+of the model. This example uses a reduced fleet:
 
 ``` r
 
 ## default regions R01 (> 20N), R02, R03 (< 20S), as in Experimento 02
-basin <- om_domain_grid(lon = c(40, 100), lat = c(-40, 30),
-                        exclude = function(lon, lat) lat > 10 & lon < 60,
-                        verbose = FALSE)
-table(basin$cells$Region)
+box <- om_domain_grid(lon = c(-60, 15), lat = c(-45, 45),
+                      exclude = function(lon, lat) lon > 0 & lat > 10,
+                      verbose = FALSE)
+table(box$cells$Region)
 #> 
 #>  R01  R02  R03 
-#>  400 2200 1200
-b_cfg <- om_biomass_config("BET_ICCAT",
-    habitat = list(hotspots = list(list(lon = 70, lat = -5, sd_lon = 10,
-                                        sd_lat = 5, amp = 1))))
-b_sim <- simulate_biomass(b_cfg, basin, long_table = FALSE, verbose = FALSE)
-f_cfg <- om_fishery_config("BET_ICCAT")
-f_cfg$fleets <- list(
-    N = om_fleet(n_vessels = 10, regions = c("R01", "R02"),
-                 core_lon = 65, core_lat = 0),
-    S = om_fleet(n_vessels = 8, year_start = 1970, regions = c("R02", "R03"),
-                 core_lon = 80, core_lat = -25))
-b_fish <- simulate_fishery(b_sim, f_cfg, verbose = FALSE)
+#> 1500 2850 1875
+b_sim <- simulate_biomass(om_biomass_config("BET_ICCAT"), box,
+                          long_table = FALSE, verbose = FALSE)
+b_fish <- simulate_fishery(b_sim, om_fishery_config("BET_ICCAT",
+    fleets = list(A = list(n_vessels = 10), B = list(n_vessels = 10),
+                  C = list(n_vessels = 8), D = list(n_vessels = 10),
+                  E = list(n_vessels = 8))), verbose = FALSE)
 b_fish
 #> <pelagicOM fishery truth> label 'base'
-#>   104,864 sets | 9,103 trips | 70 vessels | 2 fleets | 1950-2025
-#>   target catch: total 64,145 t | mean 0.612 t/set | zeros 40.0%
+#>   274,308 sets | 23,828 trips | 194 vessels | 5 fleets | 1950-2025
+#>   target catch: total 81,566 t | mean 0.297 t/set | zeros 55.2%
 #>   sets by fleet x region:
 #>    
 #>       R01   R02   R03
-#>   N   855 65398     0
-#>   S     0 33162  5449
+#>   A  5540 60713     0
+#>   B  3073 62224     0
+#>   C  5474 41700     0
+#>   D     0 51613  3773
+#>   E     0 34488  5710
 ```
 
 ## Seeds and replicates
@@ -314,7 +337,7 @@ ggplot(reps, aes(Year, B / 1e3, group = rep)) + geom_line(colour = "grey40") +
     labs(y = "Total biomass (thousand t)") + theme_pub()
 ```
 
-![](tuning_files/figure-html/unnamed-chunk-17-1.png)
+![](tuning_files/figure-html/unnamed-chunk-18-1.png)
 
 For the fishery, change `reproducibility$seeds`. Changing only one seed
 (for example `catch`) gives a new realisation of that process alone.

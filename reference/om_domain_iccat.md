@@ -50,12 +50,14 @@ dom
 #>   10051 cells | lattice 130 x 140 | lon -97.4 to 41.3 | lat -59.5 to 69.9
 #>   regions: R01 = 4519, R02 = 2368, R03 = 3164 
 #>   total area: 88,756,675 km2 | geometry: no 
-dom_alb <- om_domain_iccat("ALB-N", region_breaks = 30,
-                           region_labels = c("North", "South"),
-                           geometry = FALSE)
-#>   domain ALB-N: 5070 cells | lattice 65 x 129
-table(dom_alb$cells$Region)
+## BET-A split at the equator into four regions
+dom4 <- om_domain_iccat("BET-A", region_breaks = c(-20, 0, 20),
+                        region_labels = c("NORTH", "TROP_N", "TROP_S",
+                                          "SOUTH"),
+                        geometry = FALSE)
+#>   domain BET-A: 10051 cells | lattice 130 x 140
+table(dom4$cells$Region)
 #> 
-#> North South 
-#>  3250  1820 
+#>  NORTH TROP_N TROP_S  SOUTH 
+#>   4519   1307   1061   3164 
 ```

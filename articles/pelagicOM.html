@@ -48,7 +48,7 @@
     <li><a class="dropdown-item" href="../articles/observation-scenarios.html">Observation process and scenario data sets</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Using the package</h6></li>
-    <li><a class="dropdown-item" href="../articles/tuning.html">Tuning the operating model: other species, distributions and fleets</a></li>
+    <li><a class="dropdown-item" href="../articles/tuning.html">Tuning the operating model: hypotheses, distributions and fleets</a></li>
     <li><a class="dropdown-item" href="../articles/outputs.html">Outputs, files and data dictionary</a></li>
     <li><a class="dropdown-item" href="../articles/configuration-reference.html">Configuration reference: every parameter</a></li>
     <li><a class="dropdown-item" href="../articles/reproduce-experimento02.html">Proof of reproduction of Experimento 02</a></li>
@@ -218,82 +218,63 @@ and <code>NULL</code> removes an element.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">cfg_fast</span><span class="op">$</span><span class="va">population</span><span class="op">$</span><span class="va">r</span>, <span class="va">cfg_fast</span><span class="op">$</span><span class="va">population</span><span class="op">$</span><span class="va">decline</span><span class="op">$</span><span class="va">u_peak</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0.45 0.35</span></span></code></pre></div>
 <div class="section level3">
-<h3 id="another-species-and-stock-area">Another species and stock area<a class="anchor" aria-label="anchor" href="#another-species-and-stock-area"></a>
+<h3 id="an-alternative-hypothesis-for-bet">An alternative hypothesis for BET<a class="anchor" aria-label="anchor" href="#an-alternative-hypothesis-for-bet"></a>
 </h3>
-<p>The package ships the official ICCAT 1x1 grid with the cells of every
-ICCAT stock area:</p>
+<p>Below, BET follows a different hypothesis:</p>
+<ul>
+<li>The tropical band is split at the equator, giving four regions.</li>
+<li>The envelope widens only to the north, and its centre drifts 3
+degrees north.</li>
+<li>Fleet E leaves the fishery, and a new fleet F, created with
+<code><a href="../reference/om_fleet.html">om_fleet()</a></code>, enters in 1990 in the southern tropics.</li>
+</ul>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/iccat_stocks.html">iccat_stocks</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   stock_code                             layer</span></span>
-<span><span class="co">#&gt; 1      ALB-M         albacore_tuna_stock_areas</span></span>
-<span><span class="co">#&gt; 2      ALB-N         albacore_tuna_stock_areas</span></span>
-<span><span class="co">#&gt; 3      ALB-S         albacore_tuna_stock_areas</span></span>
-<span><span class="co">#&gt; 4      BFT-E atlantic_bluefin_tuna_stock_areas</span></span>
-<span><span class="co">#&gt; 5      BFT-W atlantic_bluefin_tuna_stock_areas</span></span>
-<span><span class="co">#&gt; 6      SAI-E     atlantic_sailfish_stock_areas</span></span>
-<span><span class="co">#&gt;                                     name n_cells        selection</span></span>
-<span><span class="co">#&gt; 1         Albacore tuna stock area ALB-M     431 point_on_surface</span></span>
-<span><span class="co">#&gt; 2         Albacore tuna stock area ALB-N    5070 point_on_surface</span></span>
-<span><span class="co">#&gt; 3         Albacore tuna stock area ALB-S    4550 point_on_surface</span></span>
-<span><span class="co">#&gt; 4 Atlantic bluefin tuna stock area BFT-E    5853 point_on_surface</span></span>
-<span><span class="co">#&gt; 5 Atlantic bluefin tuna stock area BFT-W    4198 point_on_surface</span></span>
-<span><span class="co">#&gt; 6     Atlantic sailfish stock area SAI-E    5308 point_on_surface</span></span></code></pre></div>
-<p>A temperate tuna in the North Atlantic albacore area (ALB-N) is
-sketched below. The latitudinal envelope is Gaussian on the absolute
-latitude, with a preferred latitude of 32 degrees, and it drifts 4
-degrees poleward. The regions are bands split at 25 and 40 degrees
-N:</p>
+<code class="sourceCode R"><span><span class="va">dom4</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/om_domain_iccat.html">om_domain_iccat</a></span><span class="op">(</span><span class="st">"BET-A"</span>, region_breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">20</span>, <span class="fl">0</span>, <span class="fl">20</span><span class="op">)</span>,</span>
+<span>                        region_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NORTH"</span>, <span class="st">"TROP_N"</span>, <span class="st">"TROP_S"</span>, <span class="st">"SOUTH"</span><span class="op">)</span>,</span>
+<span>                        geometry <span class="op">=</span> <span class="cn">FALSE</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="va">alt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/om_biomass_config.html">om_biomass_config</a></span><span class="op">(</span><span class="st">"BET_ICCAT"</span>,</span>
+<span>    shift <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>north_expansion <span class="op">=</span> <span class="fl">1.0</span>, south_expansion <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>                 center_drift <span class="op">=</span> <span class="fl">3</span>, ramp <span class="op">=</span> <span class="st">"logistic"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">sim_alt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/simulate_biomass.html">simulate_biomass</a></span><span class="op">(</span><span class="va">alt</span>, <span class="va">dom4</span>, long_table <span class="op">=</span> <span class="cn">FALSE</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="va">reg</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/biomass_summaries.html">regional_summary</a></span><span class="op">(</span><span class="va">sim_alt</span><span class="op">)</span></span>
+<span><span class="va">reg</span><span class="op">[</span><span class="va">reg</span><span class="op">$</span><span class="va">Year</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1950</span>, <span class="fl">2025</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Year"</span>, <span class="st">"Region"</span>, <span class="st">"Share"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt;       Year Region       Share</span></span>
+<span><span class="co">#&gt; 1950  1950  NORTH 0.036666736</span></span>
+<span><span class="co">#&gt; 19501 1950 TROP_N 0.478309582</span></span>
+<span><span class="co">#&gt; 19502 1950 TROP_S 0.453001240</span></span>
+<span><span class="co">#&gt; 19503 1950  SOUTH 0.032022443</span></span>
+<span><span class="co">#&gt; 2025  2025  NORTH 0.265418093</span></span>
+<span><span class="co">#&gt; 20251 2025 TROP_N 0.439593347</span></span>
+<span><span class="co">#&gt; 20252 2025 TROP_S 0.286488728</span></span>
+<span><span class="co">#&gt; 20253 2025  SOUTH 0.008499832</span></span></code></pre></div>
+<p>The fleets, regional effects and scenarios then follow the new
+regions (fleets reduced here to keep the vignette fast):</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dom</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/om_domain_iccat.html">om_domain_iccat</a></span><span class="op">(</span><span class="st">"ALB-N"</span>, region_breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">25</span>, <span class="fl">40</span><span class="op">)</span>,</span>
-<span>                       region_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NORTH"</span>, <span class="st">"CENTRAL"</span>, <span class="st">"SOUTH"</span><span class="op">)</span>,</span>
-<span>                       geometry <span class="op">=</span> <span class="cn">FALSE</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="va">alb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/om_biomass_config.html">om_biomass_config</a></span><span class="op">(</span><span class="st">"BET_ICCAT"</span>,</span>
-<span>    general    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>label <span class="op">=</span> <span class="st">"alb_n"</span>, seed <span class="op">=</span> <span class="fl">2027</span><span class="op">)</span>,</span>
-<span>    population <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>K <span class="op">=</span> <span class="fl">5e5</span>, r <span class="op">=</span> <span class="fl">0.25</span>, B0_frac <span class="op">=</span> <span class="fl">0.90</span>,</span>
-<span>                      decline <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>start <span class="op">=</span> <span class="fl">1960</span>, end <span class="op">=</span> <span class="fl">1990</span>, u_peak <span class="op">=</span> <span class="fl">0.20</span><span class="op">)</span>,</span>
-<span>                      recovery <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>start <span class="op">=</span> <span class="fl">2000</span>, end <span class="op">=</span> <span class="fl">2015</span>, u_end <span class="op">=</span> <span class="fl">0.08</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>    habitat    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>envelope_type <span class="op">=</span> <span class="st">"abs_latitude"</span>, lat_center <span class="op">=</span> <span class="fl">32</span>,</span>
-<span>                      lat_sd_north <span class="op">=</span> <span class="fl">7</span>, lat_sd_south <span class="op">=</span> <span class="fl">9</span>,</span>
-<span>                      hotspots <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>lon <span class="op">=</span> <span class="op">-</span><span class="fl">40</span>, lat <span class="op">=</span> <span class="fl">35</span>, sd_lon <span class="op">=</span> <span class="fl">12</span>,</span>
-<span>                                           sd_lat <span class="op">=</span> <span class="fl">5</span>, amp <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>    shift      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>north_expansion <span class="op">=</span> <span class="fl">0</span>, south_expansion <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>                      center_drift <span class="op">=</span> <span class="fl">4</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">sim_alb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/simulate_biomass.html">simulate_biomass</a></span><span class="op">(</span><span class="va">alb</span>, <span class="va">dom</span>, long_table <span class="op">=</span> <span class="cn">FALSE</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="va">cg</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/biomass_summaries.html">centre_of_gravity</a></span><span class="op">(</span><span class="va">sim_alb</span><span class="op">)</span></span>
-<span><span class="va">cg</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">cg</span><span class="op">)</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Year"</span>, <span class="st">"Lat_cg"</span>, <span class="st">"Lon_cg"</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="co">#&gt;      Year   Lat_cg    Lon_cg</span></span>
-<span><span class="co">#&gt; 1950 1950 31.25568 -47.07561</span></span>
-<span><span class="co">#&gt; 2025 2025 34.40408 -44.31650</span></span></code></pre></div>
-<p>The fleets, regional effects, target species and scenarios then
-follow the new domain. <code><a href="../reference/om_fleet.html">om_fleet()</a></code> returns a fleet
-specification with sensible defaults:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">fcfg_alb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/om_fishery_config.html">om_fishery_config</a></span><span class="op">(</span><span class="st">"BET_ICCAT"</span>, general <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>label <span class="op">=</span> <span class="st">"alb_n"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">fcfg_alb</span><span class="op">$</span><span class="va">fleets</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>    JPN <span class="op">=</span> <span class="fu"><a href="../reference/om_fleet.html">om_fleet</a></span><span class="op">(</span>n_vessels <span class="op">=</span> <span class="fl">8</span>, year_start <span class="op">=</span> <span class="fl">1955</span>,</span>
-<span>                   regions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CENTRAL"</span>, <span class="st">"SOUTH"</span><span class="op">)</span>,</span>
-<span>                   core_lon <span class="op">=</span> <span class="op">-</span><span class="fl">45</span>, core_lat <span class="op">=</span> <span class="fl">30</span><span class="op">)</span>,</span>
-<span>    TWN <span class="op">=</span> <span class="fu"><a href="../reference/om_fleet.html">om_fleet</a></span><span class="op">(</span>n_vessels <span class="op">=</span> <span class="fl">6</span>, year_start <span class="op">=</span> <span class="fl">1965</span>,</span>
-<span>                   regions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NORTH"</span>, <span class="st">"CENTRAL"</span>, <span class="st">"SOUTH"</span><span class="op">)</span>,</span>
-<span>                   core_lon <span class="op">=</span> <span class="op">-</span><span class="fl">35</span>, core_lat <span class="op">=</span> <span class="fl">38</span>, q_effect <span class="op">=</span> <span class="op">-</span><span class="fl">0.2</span>,</span>
-<span>                   strategy_comp <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>S1 <span class="op">=</span> <span class="fl">0.2</span>, S2 <span class="op">=</span> <span class="fl">0.6</span>, S3 <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">fcfg_alb</span><span class="op">$</span><span class="va">catchability</span><span class="op">$</span><span class="va">region_effect</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>NORTH <span class="op">=</span> <span class="fl">0</span>, CENTRAL <span class="op">=</span> <span class="fl">0</span>, SOUTH <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
-<span><span class="va">fcfg_alb</span><span class="op">$</span><span class="va">species</span><span class="op">$</span><span class="va">target</span> <span class="op">&lt;-</span> <span class="st">"ALB"</span></span>
-<span><span class="va">fcfg_alb</span><span class="op">$</span><span class="va">species</span><span class="op">$</span><span class="va">companions</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BET"</span>, <span class="st">"SWO"</span><span class="op">)</span></span>
-<span><span class="va">fcfg_alb</span><span class="op">$</span><span class="va">species</span><span class="op">$</span><span class="va">params</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>BET <span class="op">=</span> <span class="va">fcfg_alb</span><span class="op">$</span><span class="va">species</span><span class="op">$</span><span class="va">params</span><span class="op">$</span><span class="va">YFT</span>,</span>
-<span>                                SWO <span class="op">=</span> <span class="va">fcfg_alb</span><span class="op">$</span><span class="va">species</span><span class="op">$</span><span class="va">params</span><span class="op">$</span><span class="va">SWO</span><span class="op">)</span></span>
-<span><span class="va">fcfg_alb</span><span class="op">$</span><span class="va">scenarios</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>name <span class="op">=</span> <span class="st">"01_all_complete"</span>, regions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NORTH"</span>, <span class="st">"CENTRAL"</span>, <span class="st">"SOUTH"</span><span class="op">)</span>,</span>
+<code class="sourceCode R"><span><span class="va">fcfg_alt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/om_fishery_config.html">om_fishery_config</a></span><span class="op">(</span><span class="st">"BET_ICCAT"</span>,</span>
+<span>    fleets <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>A <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>n_vessels <span class="op">=</span> <span class="fl">6</span>, regions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NORTH"</span>, <span class="st">"TROP_N"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>                  B <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>n_vessels <span class="op">=</span> <span class="fl">6</span>, regions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NORTH"</span>, <span class="st">"TROP_N"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>                  C <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>n_vessels <span class="op">=</span> <span class="fl">5</span>, regions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NORTH"</span>, <span class="st">"TROP_N"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>                  D <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>n_vessels <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>                           regions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"TROP_N"</span>, <span class="st">"TROP_S"</span>, <span class="st">"SOUTH"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>                  E <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span>,</span>
+<span>    catchability <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>region_effect <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>NORTH <span class="op">=</span> <span class="fl">0</span>, TROP_N <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>                                          TROP_S <span class="op">=</span> <span class="fl">0</span>, SOUTH <span class="op">=</span> <span class="fl">0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">fcfg_alt</span><span class="op">$</span><span class="va">fleets</span><span class="op">$</span><span class="cn">F</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/om_fleet.html">om_fleet</a></span><span class="op">(</span>n_vessels <span class="op">=</span> <span class="fl">5</span>, year_start <span class="op">=</span> <span class="fl">1990</span>,</span>
+<span>                              regions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"TROP_S"</span>, <span class="st">"SOUTH"</span><span class="op">)</span>,</span>
+<span>                              core_lon <span class="op">=</span> <span class="op">-</span><span class="fl">5</span>, core_lat <span class="op">=</span> <span class="op">-</span><span class="fl">10</span><span class="op">)</span></span>
+<span><span class="va">fcfg_alt</span><span class="op">$</span><span class="va">scenarios</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>name <span class="op">=</span> <span class="st">"01_global_complete"</span>,</span>
+<span>         regions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NORTH"</span>, <span class="st">"TROP_N"</span>, <span class="st">"TROP_S"</span>, <span class="st">"SOUTH"</span><span class="op">)</span>,</span>
 <span>         drop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>, observation <span class="op">=</span> <span class="st">"complete"</span>,</span>
-<span>         objective <span class="op">=</span> <span class="st">"reference"</span><span class="op">)</span>,</span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>name <span class="op">=</span> <span class="st">"02_central_temporal"</span>, regions <span class="op">=</span> <span class="st">"CENTRAL"</span>,</span>
+<span>         objective <span class="op">=</span> <span class="st">"Reference"</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>name <span class="op">=</span> <span class="st">"02_north_temporal"</span>, regions <span class="op">=</span> <span class="st">"NORTH"</span>,</span>
 <span>         drop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>, observation <span class="op">=</span> <span class="st">"temporal"</span>,</span>
-<span>         objective <span class="op">=</span> <span class="st">"degraded early data"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">fish_alb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/simulate_fishery.html">simulate_fishery</a></span><span class="op">(</span><span class="va">sim_alb</span>, <span class="va">fcfg_alb</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/generate_scenarios.html">generate_scenarios</a></span><span class="op">(</span><span class="va">fish_alb</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span>         objective <span class="op">=</span> <span class="st">"Northern region with degraded early data"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">fish_alt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/simulate_fishery.html">simulate_fishery</a></span><span class="op">(</span><span class="va">sim_alt</span>, <span class="va">fcfg_alt</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/generate_scenarios.html">generate_scenarios</a></span><span class="op">(</span><span class="va">fish_alt</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;pelagicOM scenario data sets&gt; 2 data sets</span></span>
-<span><span class="co">#&gt;   01_all_complete                     80868 sets  NORTH+CENTRAL+SOUTH complete</span></span>
-<span><span class="co">#&gt;   02_central_temporal                 67576 sets  CENTRAL      temporal</span></span></code></pre></div>
+<span><span class="co">#&gt;   01_global_complete                 151736 sets  NORTH+TROP_N+TROP_S+SOUTH complete</span></span>
+<span><span class="co">#&gt;   02_north_temporal                   19481 sets  NORTH        temporal</span></span></code></pre></div>
 <p>Other entry points for tuning:</p>
 <ul>
 <li>
@@ -306,8 +287,10 @@ static log-scale layer (for example a covariate) to the habitat;</li>
 <code>population$events</code> adds abrupt shocks to the total
 biomass;</li>
 <li>
-<code><a href="../reference/om_domain_grid.html">om_domain_grid()</a></code> builds a synthetic domain for any
-ocean box, and <code><a href="../reference/om_domain_from_gpkg.html">om_domain_from_gpkg()</a></code> reads any ICCAT-like
+<code><a href="../reference/om_domain_iccat.html">om_domain_iccat()</a></code> gives the cells of any ICCAT stock
+area (<code><a href="../reference/iccat_stocks.html">iccat_stocks()</a></code>), <code><a href="../reference/om_domain_grid.html">om_domain_grid()</a></code> builds
+a synthetic domain (for example an idealised Atlantic without
+coastline), and <code><a href="../reference/om_domain_from_gpkg.html">om_domain_from_gpkg()</a></code> reads any ICCAT-like
 GeoPackage.</li>
 </ul>
 </div>
@@ -318,7 +301,7 @@ GeoPackage.</li>
 <p><code><a href="../reference/om_run.html">om_run()</a></code> runs everything. When <code>dir</code> is
 given, it writes the files with the folder structure and names of
 Experimento 02:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">run</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/om_run.html">om_run</a></span><span class="op">(</span><span class="st">"BET_ICCAT"</span>, dir <span class="op">=</span> <span class="st">"Experimento_pelagicOM"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Experimento_pelagicOM/Simulacao_Biomassa/outputs/data/biomass_true_base.rds</span></span>
 <span><span class="co">#&gt; Experimento_pelagicOM/Simulacao_Pesca/outputs/truth/TRUE_FISHERY_DATA_base.rds</span></span>

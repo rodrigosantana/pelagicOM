@@ -33,7 +33,7 @@
     <li><a class="dropdown-item" href="../articles/observation-scenarios.html">Observation process and scenario data sets</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Using the package</h6></li>
-    <li><a class="dropdown-item" href="../articles/tuning.html">Tuning the operating model: other species, distributions and fleets</a></li>
+    <li><a class="dropdown-item" href="../articles/tuning.html">Tuning the operating model: hypotheses, distributions and fleets</a></li>
     <li><a class="dropdown-item" href="../articles/outputs.html">Outputs, files and data dictionary</a></li>
     <li><a class="dropdown-item" href="../articles/configuration-reference.html">Configuration reference: every parameter</a></li>
     <li><a class="dropdown-item" href="../articles/reproduce-experimento02.html">Proof of reproduction of Experimento 02</a></li>
@@ -67,6 +67,8 @@
 <code>sf</code> is now imported in the NAMESPACE, so its methods are available as soon as pelagicOM is loaded. Before this, the bundled cell polygons (read with <code><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS()</a></code>) could be handled as plain data frames, and <code><a href="../reference/biomass_figures.html">fig_maps()</a></code> / <code><a href="../reference/biomass_figures.html">fig_base_habitat()</a></code> failed in a fresh session where no <code>sf</code> function had been called yet.</li>
 <li>
 <code><a href="../reference/fishery_diagnostics.html">strategy_recovery_diagnostic()</a></code> silences the harmless “Quick-TRANSfer” warning of <code><a href="https://rdrr.io/r/stats/kmeans.html" class="external-link">kmeans()</a></code>; its results do not change.</li>
+<li>All examples (README, vignette, articles, help pages) are based on BET. The complete tuning example is an alternative BET operating model: four regions, northward redistribution, fleet E removed and a new fleet F.</li>
+<li>The map of ICCAT stock areas (article “Spatial domain”) now draws one panel per species, with each stock area labelled on the map. In the old facetted layout the east and west areas of a species (e.g. SKJ-E / SKJ-W) looked swapped.</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.1" id="pelagicom-011-2026-11-22">pelagicOM 0.1.1 (2026-11-22)<a class="anchor" aria-label="anchor" href="#pelagicom-011-2026-11-22"></a></h2>

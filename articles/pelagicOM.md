@@ -149,92 +149,69 @@ c(cfg_fast$population$r, cfg_fast$population$decline$u_peak)
 #> [1] 0.45 0.35
 ```
 
-### Another species and stock area
+### An alternative hypothesis for BET
 
-The package ships the official ICCAT 1x1 grid with the cells of every
-ICCAT stock area:
+Below, BET follows a different hypothesis:
+
+- The tropical band is split at the equator, giving four regions.
+- The envelope widens only to the north, and its centre drifts 3 degrees
+  north.
+- Fleet E leaves the fishery, and a new fleet F, created with
+  [`om_fleet()`](https://rodrigosantana.github.io/pelagicOM/reference/om_fleet.md),
+  enters in 1990 in the southern tropics.
 
 ``` r
 
-head(iccat_stocks())
-#>   stock_code                             layer
-#> 1      ALB-M         albacore_tuna_stock_areas
-#> 2      ALB-N         albacore_tuna_stock_areas
-#> 3      ALB-S         albacore_tuna_stock_areas
-#> 4      BFT-E atlantic_bluefin_tuna_stock_areas
-#> 5      BFT-W atlantic_bluefin_tuna_stock_areas
-#> 6      SAI-E     atlantic_sailfish_stock_areas
-#>                                     name n_cells        selection
-#> 1         Albacore tuna stock area ALB-M     431 point_on_surface
-#> 2         Albacore tuna stock area ALB-N    5070 point_on_surface
-#> 3         Albacore tuna stock area ALB-S    4550 point_on_surface
-#> 4 Atlantic bluefin tuna stock area BFT-E    5853 point_on_surface
-#> 5 Atlantic bluefin tuna stock area BFT-W    4198 point_on_surface
-#> 6     Atlantic sailfish stock area SAI-E    5308 point_on_surface
+dom4 <- om_domain_iccat("BET-A", region_breaks = c(-20, 0, 20),
+                        region_labels = c("NORTH", "TROP_N", "TROP_S", "SOUTH"),
+                        geometry = FALSE, verbose = FALSE)
+alt <- om_biomass_config("BET_ICCAT",
+    shift = list(north_expansion = 1.0, south_expansion = 0,
+                 center_drift = 3, ramp = "logistic"))
+sim_alt <- simulate_biomass(alt, dom4, long_table = FALSE, verbose = FALSE)
+reg <- regional_summary(sim_alt)
+reg[reg$Year %in% c(1950, 2025), c("Year", "Region", "Share")]
+#>       Year Region       Share
+#> 1950  1950  NORTH 0.036666736
+#> 19501 1950 TROP_N 0.478309582
+#> 19502 1950 TROP_S 0.453001240
+#> 19503 1950  SOUTH 0.032022443
+#> 2025  2025  NORTH 0.265418093
+#> 20251 2025 TROP_N 0.439593347
+#> 20252 2025 TROP_S 0.286488728
+#> 20253 2025  SOUTH 0.008499832
 ```
 
-A temperate tuna in the North Atlantic albacore area (ALB-N) is sketched
-below. The latitudinal envelope is Gaussian on the absolute latitude,
-with a preferred latitude of 32 degrees, and it drifts 4 degrees
-poleward. The regions are bands split at 25 and 40 degrees N:
+The fleets, regional effects and scenarios then follow the new regions
+(fleets reduced here to keep the vignette fast):
 
 ``` r
 
-dom <- om_domain_iccat("ALB-N", region_breaks = c(25, 40),
-                       region_labels = c("NORTH", "CENTRAL", "SOUTH"),
-                       geometry = FALSE, verbose = FALSE)
-alb <- om_biomass_config("BET_ICCAT",
-    general    = list(label = "alb_n", seed = 2027),
-    population = list(K = 5e5, r = 0.25, B0_frac = 0.90,
-                      decline = list(start = 1960, end = 1990, u_peak = 0.20),
-                      recovery = list(start = 2000, end = 2015, u_end = 0.08)),
-    habitat    = list(envelope_type = "abs_latitude", lat_center = 32,
-                      lat_sd_north = 7, lat_sd_south = 9,
-                      hotspots = list(list(lon = -40, lat = 35, sd_lon = 12,
-                                           sd_lat = 5, amp = 0.8))),
-    shift      = list(north_expansion = 0, south_expansion = 0,
-                      center_drift = 4))
-sim_alb <- simulate_biomass(alb, dom, long_table = FALSE, verbose = FALSE)
-cg <- centre_of_gravity(sim_alb)
-cg[c(1, nrow(cg)), c("Year", "Lat_cg", "Lon_cg")]
-#>      Year   Lat_cg    Lon_cg
-#> 1950 1950 31.25568 -47.07561
-#> 2025 2025 34.40408 -44.31650
-```
-
-The fleets, regional effects, target species and scenarios then follow
-the new domain.
-[`om_fleet()`](https://rodrigosantana.github.io/pelagicOM/reference/om_fleet.md)
-returns a fleet specification with sensible defaults:
-
-``` r
-
-fcfg_alb <- om_fishery_config("BET_ICCAT", general = list(label = "alb_n"))
-fcfg_alb$fleets <- list(
-    JPN = om_fleet(n_vessels = 8, year_start = 1955,
-                   regions = c("CENTRAL", "SOUTH"),
-                   core_lon = -45, core_lat = 30),
-    TWN = om_fleet(n_vessels = 6, year_start = 1965,
-                   regions = c("NORTH", "CENTRAL", "SOUTH"),
-                   core_lon = -35, core_lat = 38, q_effect = -0.2,
-                   strategy_comp = c(S1 = 0.2, S2 = 0.6, S3 = 0.2)))
-fcfg_alb$catchability$region_effect <- c(NORTH = 0, CENTRAL = 0, SOUTH = 0)
-fcfg_alb$species$target <- "ALB"
-fcfg_alb$species$companions <- c("BET", "SWO")
-fcfg_alb$species$params <- list(BET = fcfg_alb$species$params$YFT,
-                                SWO = fcfg_alb$species$params$SWO)
-fcfg_alb$scenarios <- list(
-    list(name = "01_all_complete", regions = c("NORTH", "CENTRAL", "SOUTH"),
+fcfg_alt <- om_fishery_config("BET_ICCAT",
+    fleets = list(A = list(n_vessels = 6, regions = c("NORTH", "TROP_N")),
+                  B = list(n_vessels = 6, regions = c("NORTH", "TROP_N")),
+                  C = list(n_vessels = 5, regions = c("NORTH", "TROP_N")),
+                  D = list(n_vessels = 5,
+                           regions = c("TROP_N", "TROP_S", "SOUTH")),
+                  E = NULL),
+    catchability = list(region_effect = c(NORTH = 0, TROP_N = 0,
+                                          TROP_S = 0, SOUTH = 0)))
+fcfg_alt$fleets$F <- om_fleet(n_vessels = 5, year_start = 1990,
+                              regions = c("TROP_S", "SOUTH"),
+                              core_lon = -5, core_lat = -10)
+fcfg_alt$scenarios <- list(
+    list(name = "01_global_complete",
+         regions = c("NORTH", "TROP_N", "TROP_S", "SOUTH"),
          drop = character(0), observation = "complete",
-         objective = "reference"),
-    list(name = "02_central_temporal", regions = "CENTRAL",
+         objective = "Reference"),
+    list(name = "02_north_temporal", regions = "NORTH",
          drop = character(0), observation = "temporal",
-         objective = "degraded early data"))
-fish_alb <- simulate_fishery(sim_alb, fcfg_alb, verbose = FALSE)
-generate_scenarios(fish_alb, verbose = FALSE)
+         objective = "Northern region with degraded early data"))
+fish_alt <- simulate_fishery(sim_alt, fcfg_alt, verbose = FALSE)
+generate_scenarios(fish_alt, verbose = FALSE)
 #> <pelagicOM scenario data sets> 2 data sets
-#>   01_all_complete                     80868 sets  NORTH+CENTRAL+SOUTH complete
-#>   02_central_temporal                 67576 sets  CENTRAL      temporal
+#>   01_global_complete                 151736 sets  NORTH+TROP_N+TROP_S+SOUTH complete
+#>   02_north_temporal                   19481 sets  NORTH        temporal
 ```
 
 Other entry points for tuning:
@@ -243,8 +220,12 @@ Other entry points for tuning:
   log-scale layer (for example a covariate) to the habitat;
 - `population$model` accepts a function `f(B, K, r, shape)`;
 - `population$events` adds abrupt shocks to the total biomass;
-- [`om_domain_grid()`](https://rodrigosantana.github.io/pelagicOM/reference/om_domain_grid.md)
-  builds a synthetic domain for any ocean box, and
+- [`om_domain_iccat()`](https://rodrigosantana.github.io/pelagicOM/reference/om_domain_iccat.md)
+  gives the cells of any ICCAT stock area
+  ([`iccat_stocks()`](https://rodrigosantana.github.io/pelagicOM/reference/iccat_stocks.md)),
+  [`om_domain_grid()`](https://rodrigosantana.github.io/pelagicOM/reference/om_domain_grid.md)
+  builds a synthetic domain (for example an idealised Atlantic without
+  coastline), and
   [`om_domain_from_gpkg()`](https://rodrigosantana.github.io/pelagicOM/reference/om_domain_from_gpkg.md)
   reads any ICCAT-like GeoPackage.
 
