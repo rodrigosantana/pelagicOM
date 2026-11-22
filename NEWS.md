@@ -3,7 +3,7 @@
 * Package website (pkgdown) at <https://rodrigosantana.github.io/pelagicOM/>,
   built and deployed to GitHub Pages by a GitHub Actions workflow. Eight
   articles cover the spatial domain, Part I (biomass), Part II (fishery), the
-  observation process and scenarios, tuning for other species, outputs and
+  observation process and scenarios, tuning, outputs and
   data dictionary, every parameter (generated from the preset) and the proof
   of reproduction of Experimento 02.
 * `sf` is now imported in the NAMESPACE, so its methods are available as soon
@@ -13,9 +13,11 @@
   been called yet.
 * `strategy_recovery_diagnostic()` silences the harmless "Quick-TRANSfer"
   warning of `kmeans()`; its results do not change.
-* All examples (README, vignette, articles, help pages) are based on BET. The
-  complete tuning example is an alternative BET operating model: four
-  regions, northward redistribution, fleet E removed and a new fleet F.
+* All examples (README, vignette, articles, help pages) are based on BET
+  and keep the structure of Experimento 02: the BET-A area with its three
+  regions (R01, R02, R03), the five fleets A-E and the eight scenarios. The
+  complete tuning example is an alternative BET operating model that changes
+  only parameter values (productivity, northward redistribution, creep).
 * The map of ICCAT stock areas (article "Spatial domain") now draws one panel
   per species, with each stock area labelled on the map. In the old
   facetted layout the east and west areas of a species (e.g. SKJ-E / SKJ-W)

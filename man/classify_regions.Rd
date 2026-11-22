@@ -11,7 +11,7 @@ classify_regions(lat, breaks = c(-20, 20), labels = c("R01", "R02", "R03"))
 
 \item{breaks}{Ascending latitude limits (may be empty: one region).}
 
-\item{labels}{Region labels ordered from NORTH to SOUTH;
+\item{labels}{Region labels ordered from north to south;
 \code{length(breaks) + 1} elements.}
 }
 \value{

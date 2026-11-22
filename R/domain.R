@@ -50,7 +50,7 @@
 #'
 #' @param lat Numeric vector of latitudes.
 #' @param breaks Ascending latitude limits (may be empty: one region).
-#' @param labels Region labels ordered from NORTH to SOUTH;
+#' @param labels Region labels ordered from north to south;
 #'   `length(breaks) + 1` elements.
 #' @return Factor with levels `labels`.
 #' @examples
@@ -204,12 +204,8 @@ iccat_stocks <- function() iccat_grid_data()$stocks
 #' @examples
 #' dom <- om_domain_iccat("BET-A", geometry = FALSE)
 #' dom
-#' ## BET-A split at the equator into four regions
-#' dom4 <- om_domain_iccat("BET-A", region_breaks = c(-20, 0, 20),
-#'                         region_labels = c("NORTH", "TROP_N", "TROP_S",
-#'                                           "SOUTH"),
-#'                         geometry = FALSE)
-#' table(dom4$cells$Region)
+#' ## the three regions of Experimento 02
+#' table(dom$cells$Region)
 #' @export
 om_domain_iccat <- function(stock_code = "BET-A", region_breaks = c(-20, 20),
                             region_labels = c("R01", "R02", "R03"),

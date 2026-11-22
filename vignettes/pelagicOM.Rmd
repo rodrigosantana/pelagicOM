@@ -98,50 +98,27 @@ c(cfg_fast$population$r, cfg_fast$population$decline$u_peak)
 
 ### An alternative hypothesis for BET
 
-Below, BET follows a different hypothesis:
+Below, BET follows a different hypothesis, with the structure of
+Experimento 02 unchanged (three regions R01-R03, five fleets, eight
+scenarios):
 
-* The tropical band is split at the equator, giving four regions.
-* The envelope widens only to the north, and its centre drifts 3 degrees
-  north.
-* Fleet E leaves the fishery, and a new fleet F, created with `om_fleet()`,
-  enters in 1990 in the southern tropics.
+* the envelope widens only to the north, and its centre drifts 3 degrees
+  north;
+* the creep doubles, from 1% to 2% per year.
 
 ```{r}
-dom4 <- om_domain_iccat("BET-A", region_breaks = c(-20, 0, 20),
-                        region_labels = c("NORTH", "TROP_N", "TROP_S", "SOUTH"),
-                        geometry = FALSE, verbose = FALSE)
 alt <- om_biomass_config("BET_ICCAT",
     shift = list(north_expansion = 1.0, south_expansion = 0,
                  center_drift = 3, ramp = "logistic"))
-sim_alt <- simulate_biomass(alt, dom4, long_table = FALSE, verbose = FALSE)
+sim_alt <- simulate_biomass(alt, long_table = FALSE, verbose = FALSE)
 reg <- regional_summary(sim_alt)
 reg[reg$Year %in% c(1950, 2025), c("Year", "Region", "Share")]
 ```
 
-The fleets, regional effects and scenarios then follow the new regions
-(fleets reduced here to keep the vignette fast):
+The fishery uses the reduced fleets of section 2 with the new creep:
 
 ```{r}
-fcfg_alt <- om_fishery_config("BET_ICCAT",
-    fleets = list(A = list(n_vessels = 6, regions = c("NORTH", "TROP_N")),
-                  B = list(n_vessels = 6, regions = c("NORTH", "TROP_N")),
-                  C = list(n_vessels = 5, regions = c("NORTH", "TROP_N")),
-                  D = list(n_vessels = 5,
-                           regions = c("TROP_N", "TROP_S", "SOUTH")),
-                  E = NULL),
-    catchability = list(region_effect = c(NORTH = 0, TROP_N = 0,
-                                          TROP_S = 0, SOUTH = 0)))
-fcfg_alt$fleets$F <- om_fleet(n_vessels = 5, year_start = 1990,
-                              regions = c("TROP_S", "SOUTH"),
-                              core_lon = -5, core_lat = -10)
-fcfg_alt$scenarios <- list(
-    list(name = "01_global_complete",
-         regions = c("NORTH", "TROP_N", "TROP_S", "SOUTH"),
-         drop = character(0), observation = "complete",
-         objective = "Reference"),
-    list(name = "02_north_temporal", regions = "NORTH",
-         drop = character(0), observation = "temporal",
-         objective = "Northern region with degraded early data"))
+fcfg_alt <- om_config_update(fcfg, catchability = list(creep = 0.02))
 fish_alt <- simulate_fishery(sim_alt, fcfg_alt, verbose = FALSE)
 generate_scenarios(fish_alt, verbose = FALSE)
 ```
@@ -152,6 +129,7 @@ Other entry points for tuning:
   layer (for example a covariate) to the habitat;
 * `population$model` accepts a function `f(B, K, r, shape)`;
 * `population$events` adds abrupt shocks to the total biomass;
+* `om_fleet()` creates a new fleet, which is added to `fleets`;
 * `om_domain_iccat()` gives the cells of any ICCAT stock area
   (`iccat_stocks()`), `om_domain_grid()` builds a synthetic domain (for
   example an idealised Atlantic without coastline), and

@@ -46,7 +46,7 @@ The simulation functions validate the configuration and stop with an
 explicit message when something is incoherent:
 
 ```{r, error = TRUE}
-bad <- cfg; bad$spatial$region_labels <- c("N", "S")
+bad <- cfg; bad$shift$end <- bad$shift$start - 1   # ramp ends before it starts
 simulate_biomass(bad, verbose = FALSE)
 ```
 
@@ -139,29 +139,31 @@ fcfg$reproducibility$seeds$catch <- 1
 ## Complete example: an alternative operating model for BET
 
 This example puts together several of the changes above into an alternative
-hypothesis for BET. In this hypothesis:
+hypothesis for BET. The structure of Experimento 02 is kept as it is:
+
+* the BET-A area with its **three regions**, R01 (> 20°N), R02 (20°S-20°N)
+  and R03 (< 20°S);
+* the **five fleets** A-E, each with its own regions (A-C in R01+R02, D and E
+  in R02+R03);
+* the **eight scenario data sets**.
+
+Only parameter values change:
 
 * **Productivity and exploitation:** the stock is more productive
   (*r* = 0.40) and more heavily exploited (`u_peak = 0.32`).
 * **Redistribution:** it is not symmetric. The envelope widens only to the
   north and its centre drifts 3 degrees north (logistic ramp).
-* **Regions:** the tropical band is split at the equator, giving four regions
-  (NORTH, TROP_N, TROP_S, SOUTH).
-* **Fleets:** fleet E leaves the fishery, and a new fleet F enters in 1990 in
-  the southern tropics, with a deep-set strategy and a higher catchability.
-  The creep doubles.
-* **Scenarios:** they are redefined for the new regions.
+* **Catchability:** the creep doubles, from 1% to 2% per year.
 
 ```{r}
-dom4 <- om_domain_iccat("BET-A", region_breaks = c(-20, 0, 20),
-                        region_labels = c("NORTH", "TROP_N", "TROP_S", "SOUTH"))
 alt <- om_biomass_config("BET_ICCAT",
     general    = list(label = "bet_alt"),
     population = list(r = 0.40, decline = list(u_peak = 0.32)),
     shift      = list(north_expansion = 1.0, south_expansion = 0,
                       center_drift = 3, ramp = "logistic"))
-sim_alt <- simulate_biomass(alt, dom4, verbose = FALSE)
+sim_alt <- simulate_biomass(alt, verbose = FALSE)
 sim_alt
+table(sim_alt$dom$cells$Region)   # the three regions of Experimento 02
 ```
 
 ```{r, fig.height = 8}
@@ -176,37 +178,13 @@ fig_region_share(sim_alt)
 fig_centre_gravity(sim_alt)
 ```
 
-The fishery follows the new regions. In the preset, fleets A-C fish R01+R02
-and fleet D fishes R02+R03, so their `regions` are rewritten with the new
-labels:
+The fishery keeps the fleets, regions and scenarios of the preset; only the
+creep changes:
 
 ```{r}
 fcfg_alt <- om_fishery_config("BET_ICCAT",
-    general = list(label = "bet_alt"),
-    fleets = list(
-        A = list(regions = c("NORTH", "TROP_N")),
-        B = list(regions = c("NORTH", "TROP_N")),
-        C = list(regions = c("NORTH", "TROP_N")),
-        D = list(regions = c("TROP_N", "TROP_S", "SOUTH")),
-        E = NULL),                                    # fleet E removed
-    catchability = list(creep = 0.02,
-                        region_effect = c(NORTH = 0, TROP_N = 0,
-                                          TROP_S = 0, SOUTH = 0)))
-fcfg_alt$fleets$F <- om_fleet(n_vessels = 30, year_start = 1990,
-                              regions = c("TROP_S", "SOUTH"),
-                              core_lon = -5, core_lat = -10, q_effect = 0.15,
-                              strategy_comp = c(S1 = 0.7, S2 = 0.2, S3 = 0.1))
-fcfg_alt$scenarios <- list(
-    list(name = "01_global_complete",
-         regions = c("NORTH", "TROP_N", "TROP_S", "SOUTH"),
-         drop = character(0), observation = "complete",
-         objective = "Reference"),
-    list(name = "02_tropical_south_without_hbf", regions = "TROP_S",
-         drop = "HooksBetweenFloats", observation = "complete",
-         objective = "Area of the new fleet, without HBF"),
-    list(name = "03_north_temporal", regions = "NORTH",
-         drop = character(0), observation = "temporal",
-         objective = "Northern region with degraded early data"))
+    general      = list(label = "bet_alt"),
+    catchability = list(creep = 0.02))
 fish_alt <- simulate_fishery(sim_alt, fcfg_alt, verbose = FALSE)
 fish_alt
 generate_scenarios(fish_alt, verbose = FALSE)

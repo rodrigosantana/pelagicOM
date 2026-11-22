@@ -33,10 +33,6 @@ result is identical to the domain of Experimento 02.
 \examples{
 dom <- om_domain_iccat("BET-A", geometry = FALSE)
 dom
-## BET-A split at the equator into four regions
-dom4 <- om_domain_iccat("BET-A", region_breaks = c(-20, 0, 20),
-                        region_labels = c("NORTH", "TROP_N", "TROP_S",
-                                          "SOUTH"),
-                        geometry = FALSE)
-table(dom4$cells$Region)
+## the three regions of Experimento 02
+table(dom$cells$Region)
 }
