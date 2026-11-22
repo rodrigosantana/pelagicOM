@@ -1,0 +1,5 @@
+/* version number readable on the dark navbar */
+.navbar .nav-text.text-muted,
+.navbar .text-muted { color: rgba(255, 255, 255, 0.75) !important; }
+/* wide tables (configuration reference) scroll instead of overflowing */
+.contents table { display: block; overflow-x: auto; }
