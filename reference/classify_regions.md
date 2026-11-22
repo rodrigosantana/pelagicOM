@@ -25,7 +25,7 @@ classify_regions(lat, breaks = c(-20, 20), labels = c("R01", "R02", "R03"))
 
 - labels:
 
-  Region labels ordered from NORTH to SOUTH; `length(breaks) + 1`
+  Region labels ordered from north to south; `length(breaks) + 1`
   elements.
 
 ## Value

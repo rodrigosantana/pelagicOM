@@ -50,14 +50,9 @@ dom
 #>   10051 cells | lattice 130 x 140 | lon -97.4 to 41.3 | lat -59.5 to 69.9
 #>   regions: R01 = 4519, R02 = 2368, R03 = 3164 
 #>   total area: 88,756,675 km2 | geometry: no 
-## BET-A split at the equator into four regions
-dom4 <- om_domain_iccat("BET-A", region_breaks = c(-20, 0, 20),
-                        region_labels = c("NORTH", "TROP_N", "TROP_S",
-                                          "SOUTH"),
-                        geometry = FALSE)
-#>   domain BET-A: 10051 cells | lattice 130 x 140
-table(dom4$cells$Region)
+## the three regions of Experimento 02
+table(dom$cells$Region)
 #> 
-#>  NORTH TROP_N TROP_S  SOUTH 
-#>   4519   1307   1061   3164 
+#>  R01  R02  R03 
+#> 4519 2368 3164 
 ```

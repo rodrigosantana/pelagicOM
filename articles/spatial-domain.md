@@ -162,10 +162,12 @@ ggplot(m) +
 
 ## Latitudinal regions
 
-Regions are latitude bands defined by ascending `region_breaks` and by
-`region_labels` listed **from north to south**. The default is the rule
-of Experimento 02: R01 for lat \> 20, R02 for -20 ≤ lat ≤ 20 and R03 for
-lat \< -20.
+The BET-A domain has the three regions of Experimento 02: R01 for lat \>
+20, R02 for -20 ≤ lat ≤ 20 and R03 for lat \< -20. They are given by
+`region_breaks = c(-20, 20)` and
+`region_labels = c("R01", "R02", "R03")` (labels listed from north to
+south), the defaults of every domain function and of the `BET_ICCAT`
+preset.
 
 ``` r
 
@@ -178,26 +180,15 @@ table(dom$cells$Region)
 #> 4519 2368 3164
 ```
 
-Any number of bands can be used. For example, the BET-A area can be
-split at the equator into four regions. Regions without cells in a
-domain are dropped with a message.
-
 ``` r
 
-dom4 <- om_domain_iccat("BET-A", region_breaks = c(-20, 0, 20),
-                        region_labels = c("NORTH", "TROP_N", "TROP_S", "SOUTH"))
-#>   domain BET-A: 10051 cells | lattice 130 x 140
-table(dom4$cells$Region)
-#> 
-#>  NORTH TROP_N TROP_S  SOUTH 
-#>   4519   1307   1061   3164
-g <- dom4$geometry
-g$Region <- dom4$cells$Region
+g <- dom$geometry
+g$Region <- dom$cells$Region
 ggplot(g) +
     geom_sf(aes(fill = Region), colour = NA) +
-    scale_fill_grey(start = 0.2, end = 0.85) +
+    scale_fill_grey(start = 0.3, end = 0.8) +
     coord_sf(expand = FALSE) +
-    labs(title = "BET-A with four regions") +
+    labs(title = "BET-A and its three regions") +
     theme_pub() + theme(panel.grid.major = element_blank(),
                         legend.position = "right")
 ```
@@ -307,9 +298,9 @@ configuration:
 
 ``` r
 
-sim <- simulate_biomass(om_biomass_config("BET_ICCAT"), domain = dom4)
+sim <- simulate_biomass(om_biomass_config("BET_ICCAT"), domain = box)
 ```
 
 See [Tuning the operating
 model](https://rodrigosantana.github.io/pelagicOM/articles/tuning.md)
-for complete examples with other stock areas.
+for a complete alternative operating model for BET.

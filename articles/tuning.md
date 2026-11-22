@@ -50,10 +50,10 @@ explicit message when something is incoherent:
 
 ``` r
 
-bad <- cfg; bad$spatial$region_labels <- c("N", "S")
+bad <- cfg; bad$shift$end <- bad$shift$start - 1   # ramp ends before it starts
 simulate_biomass(bad, verbose = FALSE)
 #> Error in `validate_biomass_config()`:
-#> ! spatial$region_labels must have length(region_breaks) + 1 elements (ordered from north to south)
+#> ! sh$end > sh$start is not TRUE
 ```
 
 Every parameter is listed in the [configuration
@@ -164,35 +164,40 @@ fcfg$reproducibility$seeds$catch <- 1
 ## Complete example: an alternative operating model for BET
 
 This example puts together several of the changes above into an
-alternative hypothesis for BET. In this hypothesis:
+alternative hypothesis for BET. The structure of Experimento 02 is kept
+as it is:
+
+- the BET-A area with its **three regions**, R01 (\> 20°N), R02
+  (20°S-20°N) and R03 (\< 20°S);
+- the **five fleets** A-E, each with its own regions (A-C in R01+R02, D
+  and E in R02+R03);
+- the **eight scenario data sets**.
+
+Only parameter values change:
 
 - **Productivity and exploitation:** the stock is more productive (*r* =
   0.40) and more heavily exploited (`u_peak = 0.32`).
 - **Redistribution:** it is not symmetric. The envelope widens only to
   the north and its centre drifts 3 degrees north (logistic ramp).
-- **Regions:** the tropical band is split at the equator, giving four
-  regions (NORTH, TROP_N, TROP_S, SOUTH).
-- **Fleets:** fleet E leaves the fishery, and a new fleet F enters in
-  1990 in the southern tropics, with a deep-set strategy and a higher
-  catchability. The creep doubles.
-- **Scenarios:** they are redefined for the new regions.
+- **Catchability:** the creep doubles, from 1% to 2% per year.
 
 ``` r
 
-dom4 <- om_domain_iccat("BET-A", region_breaks = c(-20, 0, 20),
-                        region_labels = c("NORTH", "TROP_N", "TROP_S", "SOUTH"))
-#>   domain BET-A: 10051 cells | lattice 130 x 140
 alt <- om_biomass_config("BET_ICCAT",
     general    = list(label = "bet_alt"),
     population = list(r = 0.40, decline = list(u_peak = 0.32)),
     shift      = list(north_expansion = 1.0, south_expansion = 0,
                       center_drift = 3, ramp = "logistic"))
-sim_alt <- simulate_biomass(alt, dom4, verbose = FALSE)
+sim_alt <- simulate_biomass(alt, verbose = FALSE)
 sim_alt
 #> <pelagicOM biomass truth> label 'bet_alt' | seed 20261005
 #>   10051 cells x 76 years (1950-2025) | stock area BET-A
 #>   B_total: 950,000 t (1950) -> 485,168 t (2025) | B/K 0.95 -> 0.49 | Bmsy 5e+05 t
-#>   regional share: NORTH 0.04 -> 0.27 | TROP_N 0.48 -> 0.44 | TROP_S 0.45 -> 0.29 | SOUTH 0.03 -> 0.01
+#>   regional share: R01 0.04 -> 0.27 | R02 0.93 -> 0.73 | R03 0.03 -> 0.01
+table(sim_alt$dom$cells$Region)   # the three regions of Experimento 02
+#> 
+#>  R01  R02  R03 
+#> 4519 2368 3164
 ```
 
 ``` r
@@ -216,56 +221,37 @@ fig_centre_gravity(sim_alt)
 
 ![](tuning_files/figure-html/unnamed-chunk-13-1.png)
 
-The fishery follows the new regions. In the preset, fleets A-C fish
-R01+R02 and fleet D fishes R02+R03, so their `regions` are rewritten
-with the new labels:
+The fishery keeps the fleets, regions and scenarios of the preset; only
+the creep changes:
 
 ``` r
 
 fcfg_alt <- om_fishery_config("BET_ICCAT",
-    general = list(label = "bet_alt"),
-    fleets = list(
-        A = list(regions = c("NORTH", "TROP_N")),
-        B = list(regions = c("NORTH", "TROP_N")),
-        C = list(regions = c("NORTH", "TROP_N")),
-        D = list(regions = c("TROP_N", "TROP_S", "SOUTH")),
-        E = NULL),                                    # fleet E removed
-    catchability = list(creep = 0.02,
-                        region_effect = c(NORTH = 0, TROP_N = 0,
-                                          TROP_S = 0, SOUTH = 0)))
-fcfg_alt$fleets$F <- om_fleet(n_vessels = 30, year_start = 1990,
-                              regions = c("TROP_S", "SOUTH"),
-                              core_lon = -5, core_lat = -10, q_effect = 0.15,
-                              strategy_comp = c(S1 = 0.7, S2 = 0.2, S3 = 0.1))
-fcfg_alt$scenarios <- list(
-    list(name = "01_global_complete",
-         regions = c("NORTH", "TROP_N", "TROP_S", "SOUTH"),
-         drop = character(0), observation = "complete",
-         objective = "Reference"),
-    list(name = "02_tropical_south_without_hbf", regions = "TROP_S",
-         drop = "HooksBetweenFloats", observation = "complete",
-         objective = "Area of the new fleet, without HBF"),
-    list(name = "03_north_temporal", regions = "NORTH",
-         drop = character(0), observation = "temporal",
-         objective = "Northern region with degraded early data"))
+    general      = list(label = "bet_alt"),
+    catchability = list(creep = 0.02))
 fish_alt <- simulate_fishery(sim_alt, fcfg_alt, verbose = FALSE)
 fish_alt
 #> <pelagicOM fishery truth> label 'bet_alt'
-#>   1,080,614 sets | 93,853 trips | 788 vessels | 5 fleets | 1950-2025
-#>   target catch: total 870,061 t | mean 0.805 t/set | zeros 38.6%
+#>   1,137,186 sets | 98,782 trips | 826 vessels | 5 fleets | 1950-2025
+#>   target catch: total 853,152 t | mean 0.750 t/set | zeros 40.3%
 #>   sets by fleet x region:
 #>    
-#>      NORTH  SOUTH TROP_N TROP_S
-#>   A  57991      0 238014      0
-#>   B  35113      0 228191      0
-#>   C  50164      0 155968      0
-#>   D      0   3971 117085 100859
-#>   F      0   3012      0  90246
+#>        R01    R02    R03
+#>   A  47062 248943      0
+#>   B  23495 239809      0
+#>   C  38874 167258      0
+#>   D      0 218000   3915
+#>   E      0 144186   5644
 generate_scenarios(fish_alt, verbose = FALSE)
-#> <pelagicOM scenario data sets> 3 data sets
-#>   01_global_complete                1080614 sets  NORTH+TROP_N+TROP_S+SOUTH complete
-#>   02_tropical_south_without_hbf      191105 sets  TROP_S       complete
-#>   03_north_temporal                  140012 sets  NORTH        temporal
+#> <pelagicOM scenario data sets> 8 data sets
+#>   01_global_complete                1137186 sets  R01+R02+R03  complete
+#>   02_global_without_hbf             1137186 sets  R01+R02+R03  complete
+#>   03_R02_complete                   1018196 sets  R02          complete
+#>   04_global_temporal_uncertainty    1077246 sets  R01+R02+R03  temporal
+#>   05_R02_temporal_uncertainty        960891 sets  R02          temporal
+#>   06_R01_complete                    109431 sets  R01          complete
+#>   07_R03_complete                      9559 sets  R03          complete
+#>   08_R02_without_hbf                1018196 sets  R02          complete
 ```
 
 ``` r

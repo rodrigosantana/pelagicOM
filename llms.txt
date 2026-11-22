@@ -64,10 +64,8 @@ bcfg <- om_biomass_config("BET_ICCAT",
                           population = list(r = 0.45),
                           shift = list(center_drift = 3))
 
-# any latitudinal regions (BET-A split at the equator into four regions),
-# or the domain read directly from the GeoPackage (geodesic areas by lwgeom)
-dom4 <- om_domain_iccat("BET-A", region_breaks = c(-20, 0, 20),
-                        region_labels = c("NORTH", "TROP_N", "TROP_S", "SOUTH"))
+# the BET-A domain read directly from the GeoPackage (geodesic areas by
+# lwgeom), identical to the bundled grid: three regions R01, R02, R03
 dom_gpkg <- om_domain_from_gpkg("Experimento_02/ICCAT/ICCAT_gis.gpkg")
 
 # user-defined habitat layers (log scale, one value per cell)
@@ -81,9 +79,10 @@ fcfg$fleets$F <- om_fleet(n_vessels = 20, year_start = 1990,
 
 The [articles](https://rodrigosantana.github.io/pelagicOM/articles/)
 cover every component of the model and the tuning options, including a
-complete alternative operating model for BET (four regions, northward
-redistribution, new fleet), the configuration reference and the data
-dictionary.
+complete alternative operating model for BET (same three regions, fleets
+and scenarios as Experimento 02, with other productivity, a northward
+redistribution and a stronger creep), the configuration reference and
+the data dictionary.
 
 ## Proof of reproduction
 
@@ -151,7 +150,9 @@ A área pode ser qualquer estoque da ICCAT
 as regiões podem ser faixas de latitude livres, o envelope pode ser
 tropical (`"latitude"`) ou temperado (`"abs_latitude"`), e frotas,
 espécies-alvo e acompanhantes também são configuráveis. Todos os
-exemplos da documentação usam a BET. A metodologia completa está em
+exemplos da documentação usam a BET e mantêm a estrutura do Experimento
+02: as três regiões (R01, R02, R03), as cinco frotas e os oito cenários.
+A metodologia completa está em
 `Experimento_02/Simulacao_Biomassa/METODOLOGIA.md` e
 `Experimento_02/Simulacao_Pesca/RELATORIO_METODOLOGICO.md`.
 
