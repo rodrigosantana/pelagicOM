@@ -1,0 +1,13 @@
+# R
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# build / check products
+*.tar.gz
+*.Rcheck/
+inst/doc/
+doc/
+Meta/

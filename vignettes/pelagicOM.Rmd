@@ -1,0 +1,190 @@
+---
+title: "Getting started with pelagicOM"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with pelagicOM}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7,
+                      fig.height = 4.5)
+has_plots <- requireNamespace("ggplot2", quietly = TRUE) &&
+    requireNamespace("patchwork", quietly = TRUE)
+```
+
+`pelagicOM` builds a completely known **operating truth** for testing CPUE
+standardisation methods. It has two parts, run one after the other:
+
+1. **Biomass (Part I)**: total biomass $B_{total}(y)$ from a
+   Pella-Tomlinson model with an exogenous removal rate, distributed over a
+   1x1 degree grid as $B(y,s) = B_{total}(y)\,p(y,s)$. The weights
+   $p(y,s)$ come from a static habitat (latitudinal envelope, hotspots,
+   gradient, persistent Gaussian random field), a redistribution of the
+   envelope in time and spatio-temporal AR(1) noise.
+2. **Fishery (Part II)**: set-by-set pelagic longline operations on top of
+   the biomass truth. It covers fleets, vessels with careers, trips and
+   sets, location by preferential sampling and fidelity, latent fishing
+   strategies, hooks and hooks between floats (HBF), the components of log
+   catchability, Tweedie catches and companion species. Observation
+   profiles and scenario data sets are generated from the result.
+
+The `"BET_ICCAT"` preset is the bigeye tuna operating model of Experimento 02
+and reproduces its results bit for bit.
+
+```{r}
+library(pelagicOM)
+om_presets()[, c("preset", "species", "area")]
+```
+
+## 1. Biomass truth
+
+```{r}
+bcfg <- om_biomass_config("BET_ICCAT")
+bcfg
+sim <- simulate_biomass(bcfg, verbose = FALSE)
+sim
+head(regional_summary(sim), 3)
+```
+
+```{r, eval = has_plots}
+fig_total_biomass(sim)
+fig_region_share(sim)
+```
+
+## 2. Fishery truth and scenario data sets
+
+The full BET fishery has about 1.1 million sets and takes around 15 s.
+Here the fleets are reduced to keep the vignette fast:
+
+```{r}
+fcfg <- om_fishery_config("BET_ICCAT",
+    fleets = list(A = list(n_vessels = 6), B = list(n_vessels = 6),
+                  C = list(n_vessels = 5), D = list(n_vessels = 5),
+                  E = list(n_vessels = 4)))
+fish <- simulate_fishery(sim, fcfg, verbose = FALSE)
+fish
+scen <- generate_scenarios(fish, verbose = FALSE)
+scen
+```
+
+The true data keep every latent variable (true strategy, density,
+catchability components, expected catch). The scenario data sets keep only
+what a real logbook would contain:
+
+```{r}
+fish$latent_columns[1:10]
+names(scen$datasets[["04_global_temporal_uncertainty"]])
+```
+
+```{r, eval = has_plots, fig.height = 6}
+fig_cpue_vs_biomass(fish)
+```
+
+## 3. Tuning the operating model
+
+Every parameter is in the two configuration lists. `om_config_update()`
+(or the `...` of the configuration functions) merges named lists level by
+level. Vectors and unnamed lists, such as hotspots or scenarios, are
+replaced as a whole, and `NULL` removes an element.
+
+```{r}
+cfg_fast <- om_config_update(bcfg,
+    population = list(r = 0.45, decline = list(u_peak = 0.35)),
+    shift = list(enabled = FALSE))
+c(cfg_fast$population$r, cfg_fast$population$decline$u_peak)
+```
+
+### Another species and stock area
+
+The package ships the official ICCAT 1x1 grid with the cells of every ICCAT
+stock area:
+
+```{r}
+head(iccat_stocks())
+```
+
+A temperate tuna in the North Atlantic albacore area (ALB-N) is sketched
+below. The latitudinal envelope is Gaussian on the absolute latitude, with
+a preferred latitude of 32 degrees, and it drifts 4 degrees poleward. The
+regions are bands split at 25 and 40 degrees N:
+
+```{r}
+dom <- om_domain_iccat("ALB-N", region_breaks = c(25, 40),
+                       region_labels = c("NORTH", "CENTRAL", "SOUTH"),
+                       geometry = FALSE, verbose = FALSE)
+alb <- om_biomass_config("BET_ICCAT",
+    general    = list(label = "alb_n", seed = 2027),
+    population = list(K = 5e5, r = 0.25, B0_frac = 0.90,
+                      decline = list(start = 1960, end = 1990, u_peak = 0.20),
+                      recovery = list(start = 2000, end = 2015, u_end = 0.08)),
+    habitat    = list(envelope_type = "abs_latitude", lat_center = 32,
+                      lat_sd_north = 7, lat_sd_south = 9,
+                      hotspots = list(list(lon = -40, lat = 35, sd_lon = 12,
+                                           sd_lat = 5, amp = 0.8))),
+    shift      = list(north_expansion = 0, south_expansion = 0,
+                      center_drift = 4))
+sim_alb <- simulate_biomass(alb, dom, long_table = FALSE, verbose = FALSE)
+cg <- centre_of_gravity(sim_alb)
+cg[c(1, nrow(cg)), c("Year", "Lat_cg", "Lon_cg")]
+```
+
+The fleets, regional effects, target species and scenarios then follow the
+new domain. `om_fleet()` returns a fleet specification with sensible
+defaults:
+
+```{r}
+fcfg_alb <- om_fishery_config("BET_ICCAT", general = list(label = "alb_n"))
+fcfg_alb$fleets <- list(
+    JPN = om_fleet(n_vessels = 8, year_start = 1955,
+                   regions = c("CENTRAL", "SOUTH"),
+                   core_lon = -45, core_lat = 30),
+    TWN = om_fleet(n_vessels = 6, year_start = 1965,
+                   regions = c("NORTH", "CENTRAL", "SOUTH"),
+                   core_lon = -35, core_lat = 38, q_effect = -0.2,
+                   strategy_comp = c(S1 = 0.2, S2 = 0.6, S3 = 0.2)))
+fcfg_alb$catchability$region_effect <- c(NORTH = 0, CENTRAL = 0, SOUTH = 0)
+fcfg_alb$species$target <- "ALB"
+fcfg_alb$species$companions <- c("BET", "SWO")
+fcfg_alb$species$params <- list(BET = fcfg_alb$species$params$YFT,
+                                SWO = fcfg_alb$species$params$SWO)
+fcfg_alb$scenarios <- list(
+    list(name = "01_all_complete", regions = c("NORTH", "CENTRAL", "SOUTH"),
+         drop = character(0), observation = "complete",
+         objective = "reference"),
+    list(name = "02_central_temporal", regions = "CENTRAL",
+         drop = character(0), observation = "temporal",
+         objective = "degraded early data"))
+fish_alb <- simulate_fishery(sim_alb, fcfg_alb, verbose = FALSE)
+generate_scenarios(fish_alb, verbose = FALSE)
+```
+
+Other entry points for tuning:
+
+* `habitat$custom_effect = function(cells) ...` adds any static log-scale
+  layer (for example a covariate) to the habitat;
+* `population$model` accepts a function `f(B, K, r, shape)`;
+* `population$events` adds abrupt shocks to the total biomass;
+* `om_domain_grid()` builds a synthetic domain for any ocean box, and
+  `om_domain_from_gpkg()` reads any ICCAT-like GeoPackage.
+
+## 4. Writing the outputs and reproducing Experimento 02
+
+`om_run()` runs everything. When `dir` is given, it writes the files with
+the folder structure and names of Experimento 02:
+
+```{r, eval = FALSE}
+run <- om_run("BET_ICCAT", dir = "Experimento_pelagicOM")
+#> Experimento_pelagicOM/Simulacao_Biomassa/outputs/data/biomass_true_base.rds
+#> Experimento_pelagicOM/Simulacao_Pesca/outputs/truth/TRUE_FISHERY_DATA_base.rds
+#> Experimento_pelagicOM/Simulacao_Pesca/outputs/datasets/01_global_complete.rds
+#> ...
+om_compare_reference(run, "R-Work/Experimento_02")
+```
+
+`om_compare_reference()` compares the biomass, the long table, the fishery
+truth and the eight scenario data sets with the reference files and reports
+whether each one is `identical()`. The script
+`system.file("scripts", "reproduce_experimento02.R", package = "pelagicOM")`
+runs the whole proof from the command line.

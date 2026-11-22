@@ -1,0 +1,43 @@
+Package: pelagicOM
+Type: Package
+Title: Spatio-Temporal Operating Model for Pelagic Stocks and Longline Fisheries
+Version: 0.1.1
+Date: 2026-11-22
+Authors@R:
+    person("Rodrigo", "Sant'Ana", role = c("aut", "cre"),
+           email = "rsantana@univali.br")
+Description: Simulates a completely known operating truth for testing CPUE
+    standardisation: (i) the spatio-temporal biomass of a pelagic stock on
+    a 1x1 degree grid (Pella-Tomlinson total biomass, latitudinal habitat
+    envelope, hotspots, persistent and spatio-temporal Gaussian random
+    fields, poleward redistribution) and (ii) set-by-set pelagic longline
+    operations on top of it (fleets, vessels with careers, trips, sets,
+    preferential sampling and fidelity, latent fishing strategies, hooks and
+    hooks between floats, catchability components including creep, Tweedie
+    catches, companion species), plus observation processes and scenario data
+    sets. Ships the ICCAT 1x1 grid with the membership of every ICCAT stock
+    area. The 'BET_ICCAT' preset reproduces exactly the bigeye tuna operating
+    model of Experimento 02 (workshop tRFMO CPUE, 2026).
+License: GPL-3
+URL: https://github.com/rodrigosantana/pelagicOM
+BugReports: https://github.com/rodrigosantana/pelagicOM/issues
+Encoding: UTF-8
+Language: en-GB
+Depends:
+    R (>= 4.1.0)
+Imports:
+    grDevices,
+    lwgeom (>= 0.2),
+    sf (>= 1.0),
+    stats,
+    utils
+Suggests:
+    ggplot2 (>= 3.5.0),
+    knitr,
+    patchwork,
+    rmarkdown,
+    testthat (>= 3.0.0)
+VignetteBuilder: knitr
+Config/testthat/edition: 3
+Roxygen: list(markdown = TRUE)
+Config/roxygen2/version: 8.1.1
